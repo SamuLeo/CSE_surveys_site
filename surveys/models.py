@@ -35,13 +35,13 @@ class Patient(models.Model):
         return self.name + " " + self.surname
 
     class Meta:
-        verbose_name="Pazient"
-        verbose_name_plural="Pazients"
+        verbose_name="Patient"
+        verbose_name_plural="Patients"
 
 
 class Caregiver(models.Model):
 
-    id_patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
 
     name = models.CharField(max_length=50)
     surname = models.CharField(max_length=50)
@@ -62,13 +62,13 @@ class Caregiver(models.Model):
 
 class Survey(models.Model):
 
-    id_survey = models.CharField(primary_key=True, max_length=100)
+    name = models.CharField(primary_key=True, max_length=100)
 
     description = models.TextField(blank=True, null=True)
     patient_survey = models.BooleanField()
 
     def __str__(self):
-        return self.id_survey
+        return self.name
 
     class Meta:
         verbose_name="Survey"
@@ -89,7 +89,7 @@ class QuestionType(models.Model):
 
 class Question(models.Model):
 
-    id_survey = models.ForeignKey(Survey, on_delete=models.CASCADE, related_name="questions")
+    survey = models.ForeignKey(Survey, on_delete=models.CASCADE, related_name="questions")
     question_sequence_number = models.SmallIntegerField()
 
     type = models.ForeignKey(QuestionType, on_delete=models.DO_NOTHING)
@@ -97,16 +97,23 @@ class Question(models.Model):
     content = models.CharField(max_length=1000)
 
     def __str__(self):
-        return self.content
+        return str(self.question_sequence_number) + " - " + self.content
 
     class Meta:
         verbose_name="Question"
         verbose_name_plural="Questions"
-        models.UniqueConstraint(fields=['id_survey', 'question_sequence_number'], name='unique_survey_QuestionSequenceNumber')
+
+        ordering = ['survey', 'question_sequence_number', ]
+
+        # constraints = [
+        #     models.CheckConstraint(check=models.Q(question_sequence_number__gte=0), name='question_sequence_number_gte_0'),
+        # ]
+
+        models.UniqueConstraint(fields=['survey', 'question_sequence_number'], name='unique_survey_QuestionSequenceNumber')
 
 class Answer(models.Model):
 
-    id_question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="answers")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="answers")
     answer_sequence_number = models.SmallIntegerField()
 
     value = models.CharField(max_length=300)
@@ -117,16 +124,22 @@ class Answer(models.Model):
     class Meta:
         verbose_name="Answer"
         verbose_name_plural="Answers"
-        models.UniqueConstraint(fields=['id_question', 'answer_sequence_number'], name='unique_question_AnswerSequenceNumber')
 
+        ordering = ['question', 'answer_sequence_number', ]
+
+        # constraints = [
+        #     models.CheckConstraint(check=models.Q(answer_sequence_number__gte=0), name='answer_sequence_number_gte_0'),
+        # ]
+
+        models.UniqueConstraint(fields=['question', 'answer_sequence_number'], name='unique_question_AnswerSequenceNumber')
 
 
 class Patient_Survey_Question_Answer(models.Model):
 
-    id_patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="patient_answers")
-    id_survey = models.ForeignKey(Survey, on_delete=models.DO_NOTHING)
-    id_question = models.ForeignKey(Question, on_delete=models.DO_NOTHING)
-    id_answer = models.ForeignKey(Answer, on_delete=models.DO_NOTHING)
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="patient_answers")
+    survey = models.ForeignKey(Survey, on_delete=models.DO_NOTHING)
+    question = models.ForeignKey(Question, on_delete=models.DO_NOTHING)
+    answer = models.ForeignKey(Answer, on_delete=models.DO_NOTHING)
     date = models.DateTimeField()
 
     def __str__(self):
@@ -135,15 +148,15 @@ class Patient_Survey_Question_Answer(models.Model):
     class Meta:
         verbose_name="Patient's Answer"
         verbose_name_plural="Patient's Answers"
-        models.UniqueConstraint(fields=['id_patient', 'id_survey', 'id_question', 'id_answer', 'date'], name='unique_filling_patient')
+        models.UniqueConstraint(fields=['patient', 'survey', 'question', 'answer', 'date'], name='unique_filling_patient')
 
 
 class Caregiver_Survey_Question_Answer(models.Model):
 
-    id_caregiver = models.ForeignKey(Caregiver, on_delete=models.CASCADE, related_name="caregiver_answers")
-    id_survey = models.ForeignKey(Survey, on_delete=models.DO_NOTHING)
-    id_question = models.ForeignKey(Question, on_delete=models.DO_NOTHING)
-    id_answer = models.ForeignKey(Answer, on_delete=models.DO_NOTHING)
+    caregiver = models.ForeignKey(Caregiver, on_delete=models.CASCADE, related_name="caregiver_answers")
+    survey = models.ForeignKey(Survey, on_delete=models.DO_NOTHING)
+    question = models.ForeignKey(Question, on_delete=models.DO_NOTHING)
+    answer = models.ForeignKey(Answer, on_delete=models.DO_NOTHING)
     date = models.DateTimeField()
 
     def __str__(self):
@@ -152,4 +165,4 @@ class Caregiver_Survey_Question_Answer(models.Model):
     class Meta:
         verbose_name="Caregiver's Answer"
         verbose_name_plural="Caregiver's Answers"
-        models.UniqueConstraint(fields=['id_caregiver', 'id_survey', 'id_question', 'id_answer', 'date'], name='unique_filling_caregiver')
+        models.UniqueConstraint(fields=['caregiver', 'survey', 'question', 'answer', 'date'], name='unique_filling_caregiver')
