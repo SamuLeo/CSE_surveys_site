@@ -4,7 +4,15 @@ from .models import TransplantType, Patient, Caregiver, Survey, QuestionType, Qu
 
 # Register your models here.
 
-ordering = ['Patient', 'Caregiver',]
+class CaregiverAdmin(admin.ModelAdmin):
+    model = Caregiver
+    list_display = ['__str__', 'get_patient', ]
+
+    def get_patient(self, obj):
+        return obj.patient.surname
+    get_patient.admin_order_field = 'surname'
+    get_patient.short_description = 'Patient Surname'
+
 
 class SurveyAdmin(admin.ModelAdmin):
     model = Survey
@@ -19,7 +27,7 @@ class SurveyAdmin(admin.ModelAdmin):
 
 class QuestionAdmin(admin.ModelAdmin):
     model = Question
-    list_display = ['get_survey', 'question_sequence_number', 'content', ]
+    list_display = ['get_survey', 'question_sequence_number', 'question_subsequence_number', 'type', 'content', ]
 
     def get_survey(self, obj):
         return obj.survey.name
@@ -28,7 +36,7 @@ class QuestionAdmin(admin.ModelAdmin):
 
 class AnswerAdmin(admin.ModelAdmin):
     model = Answer
-    list_display = ['get_survey', 'get_question_sequence_number', 'get_question_content', 'value']
+    list_display = ['get_survey', 'get_question_sequence_number','get_question_subsequence_number', 'get_question_type' , 'get_question_content', 'value', ]
 
     def get_survey(self, obj):
         return obj.question.survey.name
@@ -38,16 +46,25 @@ class AnswerAdmin(admin.ModelAdmin):
     def get_question_sequence_number(self, obj):
         return obj.question.question_sequence_number
     get_question_sequence_number.admin_order_field = 'question_sequence_number'
-    get_question_sequence_number.short_description = 'Question Sequence Number'
+    get_question_sequence_number.short_description = 'Question\'s Sequence Number'
+
+    def get_question_subsequence_number(self, obj):
+        return obj.question.question_subsequence_number
+    get_question_subsequence_number.admin_order_field = 'question_subsequence_number'
+    get_question_subsequence_number.short_description = 'Question\'s Subsequence Number'
 
     def get_question_content(self, obj):
         return obj.question.content
-    get_question_content.short_description = 'Question Content'
+    get_question_content.short_description = 'Question\'s Content'
+
+    def get_question_type(self, obj):
+        return obj.question.type
+    get_question_type.short_description = 'Question\'s Type'
 
 
 admin.site.register(TransplantType)
 admin.site.register(Patient)
-admin.site.register(Caregiver)
+admin.site.register(Caregiver, CaregiverAdmin)
 admin.site.register(Survey, SurveyAdmin)
 admin.site.register(QuestionType)
 admin.site.register(Question, QuestionAdmin)

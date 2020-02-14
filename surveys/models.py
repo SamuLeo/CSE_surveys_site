@@ -13,6 +13,17 @@ class TransplantType(models.Model):
         verbose_name="Type Of Transplant"
         verbose_name_plural="Types Of Transplant"
 
+class GenderType(models.Model):
+
+    value = models.CharField(max_length=50, primary_key=True)
+
+    def __str__(self):
+        return self.value
+
+    class Meta:
+        verbose_name="Type Of Gender"
+        verbose_name_plural="Types Of Gender"
+
 
 class Patient(models.Model):
 
@@ -20,12 +31,12 @@ class Patient(models.Model):
 
     name = models.CharField(max_length=50)
     surname = models.CharField(max_length=50)
-    gender = models.CharField(max_length=10)
-    birth_date = models.DateTimeField(blank=True,null=True)
+    gender = models.ForeignKey(GenderType, on_delete=models.DO_NOTHING)
+    birth_date = models.DateField(blank=True,null=True)
 
-    recovery_date = models.DateTimeField(blank=True,null=True)
-    transplant_date = models.DateTimeField(blank=True,null=True)
-    resignation_date = models.DateTimeField(blank=True,null=True)
+    recovery_date = models.DateField(blank=True,null=True)
+    transplant_date = models.DateField(blank=True,null=True)
+    resignation_date = models.DateField(blank=True,null=True)
 
     transplant_type = models.ForeignKey(TransplantType, on_delete=models.DO_NOTHING)
 
@@ -45,8 +56,8 @@ class Caregiver(models.Model):
 
     name = models.CharField(max_length=50)
     surname = models.CharField(max_length=50)
-    gender = models.CharField(max_length=10)
-    birth_date = models.DateTimeField(blank=True,null=True)
+    gender = models.ForeignKey(GenderType, on_delete=models.DO_NOTHING)
+    birth_date = models.DateField(blank=True,null=True)
 
     relationship_with_patient = models.CharField(max_length=200)
     number_of_sons = models.SmallIntegerField(blank=True,null=True)
@@ -91,25 +102,32 @@ class Question(models.Model):
 
     survey = models.ForeignKey(Survey, on_delete=models.CASCADE, related_name="questions")
     question_sequence_number = models.SmallIntegerField()
+    question_subsequence_number = models.CharField(max_length=1, null=True, blank = True)
 
     type = models.ForeignKey(QuestionType, on_delete=models.DO_NOTHING)
 
     content = models.CharField(max_length=1000)
 
     def __str__(self):
-        return str(self.question_sequence_number) + " - " + self.content
+        if self.question_subsequence_number is not None:
+            return str(self.question_sequence_number) + "." + str(self.question_subsequence_number) + " - " + self.content
+        elif str(self.type.value) == "Instructions in compound question":
+            return str(self.question_sequence_number)  + "instr. - " + self.content
+        else:
+            return str(self.question_sequence_number) + " - " + self.content
 
     class Meta:
         verbose_name="Question"
         verbose_name_plural="Questions"
 
-        ordering = ['survey', 'question_sequence_number', ]
+        ordering = ['survey', 'question_sequence_number', 'question_subsequence_number',]
 
         # constraints = [
         #     models.CheckConstraint(check=models.Q(question_sequence_number__gte=0), name='question_sequence_number_gte_0'),
         # ]
 
-        models.UniqueConstraint(fields=['survey', 'question_sequence_number'], name='unique_survey_QuestionSequenceNumber')
+        models.UniqueConstraint(fields=['survey', 'question_sequence_number', 'question_subsequence_number',], name='unique_survey_QuestionSequenceNumber')
+
 
 class Answer(models.Model):
 
@@ -131,7 +149,7 @@ class Answer(models.Model):
         #     models.CheckConstraint(check=models.Q(answer_sequence_number__gte=0), name='answer_sequence_number_gte_0'),
         # ]
 
-        models.UniqueConstraint(fields=['question', 'answer_sequence_number'], name='unique_question_AnswerSequenceNumber')
+        models.UniqueConstraint(fields=['question', 'answer_sequence_number', ], name='unique_question_AnswerSequenceNumber')
 
 
 class Patient_Survey_Question_Answer(models.Model):
