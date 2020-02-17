@@ -112,7 +112,7 @@ class Question(models.Model):
         if self.question_subsequence_number is not None:
             return str(self.question_sequence_number) + "." + str(self.question_subsequence_number) + " - " + self.content
         elif str(self.type.value) == "Instructions in compound question":
-            return str(self.question_sequence_number)  + "instr. - " + self.content
+            return str(self.question_sequence_number)  + " - " + self.content
         else:
             return str(self.question_sequence_number) + " - " + self.content
 

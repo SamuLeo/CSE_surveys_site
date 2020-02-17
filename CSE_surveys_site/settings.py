@@ -38,8 +38,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'crispy_forms',
+
     'surveys',
 ]
+
+CRISPY_TEMPLATE_PACK = "bootstrap4"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -56,7 +60,9 @@ ROOT_URLCONF = 'CSE_surveys_site.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [   os.path.join(BASE_DIR, 'templates'),
+                    os.path.join(BASE_DIR, '/surveys/templates'),
+                    ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

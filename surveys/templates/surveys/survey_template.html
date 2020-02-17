@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block head_title %}{{survey_name}}{% endblock head_title %}
+
+{% block content %}
+    <div class="container">
+        <h1>{{survey_name}}</h1>
+        <p>{{survey_description}}</p>
+        <form action="" method="post" novalidate>
+            {% csrf_token %}
+            <input type="submit" class="btn btn-info" value="INVIA">
+        </form>
+    </div>
+{% endblock content %}
