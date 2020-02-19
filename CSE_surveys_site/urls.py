@@ -19,7 +19,7 @@ from django.urls import path, include
 from surveys import urls
 
 urlpatterns = [
+    path('', include('core.urls')),
     path('admin/', admin.site.urls),
-    path('surveys/', include('surveys.urls')),
-
+    path('questionari/', include('surveys.urls')),
 ]

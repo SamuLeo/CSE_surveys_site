@@ -158,14 +158,17 @@ class Patient_Survey_Question_Answer(models.Model):
     survey = models.ForeignKey(Survey, on_delete=models.DO_NOTHING)
     question = models.ForeignKey(Question, on_delete=models.DO_NOTHING)
     answer = models.ForeignKey(Answer, on_delete=models.DO_NOTHING)
-    date = models.DateTimeField()
+    date = models.DateField()
 
     def __str__(self):
-        return f"Data: {self.date} \n Paziente: {self.id_patient} \n {self.id_survey}.{self.id_question} = {self.id_question}"
+        return f"Data: {self.date} \n Paziente: {self.patient} \n Questionario: {self.survey}\nDomanda: {self.question}\nRisposta: {self.answer}"
 
     class Meta:
         verbose_name="Patient's Answer"
         verbose_name_plural="Patient's Answers"
+
+        ordering = ['patient', 'date', 'survey', 'question', 'answer',]
+
         models.UniqueConstraint(fields=['patient', 'survey', 'question', 'answer', 'date'], name='unique_filling_patient')
 
 
@@ -175,12 +178,15 @@ class Caregiver_Survey_Question_Answer(models.Model):
     survey = models.ForeignKey(Survey, on_delete=models.DO_NOTHING)
     question = models.ForeignKey(Question, on_delete=models.DO_NOTHING)
     answer = models.ForeignKey(Answer, on_delete=models.DO_NOTHING)
-    date = models.DateTimeField()
+    date = models.DateField()
 
     def __str__(self):
-        return f"Data: {self.date} \n Caregiver: {self.id_caregiver} \n {self.id_survey}.{self.id_question} = {self.id_question}"
+        return f"Data: {self.date} \n Caregiver: {self.caregiver} \n Questionario: {self.survey}\nDomanda: {self.question}\nRisposta: {self.answer}"
 
     class Meta:
         verbose_name="Caregiver's Answer"
         verbose_name_plural="Caregiver's Answers"
+
+        ordering = ['caregiver', 'date', 'survey', 'question', 'answer',]
+
         models.UniqueConstraint(fields=['caregiver', 'survey', 'question', 'answer', 'date'], name='unique_filling_caregiver')

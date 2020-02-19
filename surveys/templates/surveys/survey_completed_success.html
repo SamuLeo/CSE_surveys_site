@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}Successo{% endblock title %}
+
+{% block content %}
+    <div class="container pb-5">
+        <h1>Questionario inserito con successo</h1>
+        <h5><a href="{% url 'list_survey_name' %}">Inserisci un altro questionario</a></h5>     
+    </div>
+
+{% endblock content %}

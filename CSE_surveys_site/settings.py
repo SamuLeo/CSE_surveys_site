@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'crispy_forms',
 
     'surveys',
+    'core',
 ]
 
 CRISPY_TEMPLATE_PACK = "bootstrap4"
@@ -62,6 +63,7 @@ TEMPLATES = [
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [   os.path.join(BASE_DIR, 'templates'),
                     os.path.join(BASE_DIR, '/surveys/templates'),
+                    os.path.join(BASE_DIR, '/core/templates'),
                     ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -138,4 +140,5 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILE_DIRS = [
     os.path.join(BASE_DIR, 'static'),
+    "/surveys/static",    
 ]

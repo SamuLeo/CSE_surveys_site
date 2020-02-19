@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista Questionari{% endblock title %}
+
+{% block content %}
+    <br>
+    <h2>Scegliere il questionario da inserire:</h2><br><br>
+    <br>
+    {% for survey in surveys %}
+        <h5><a href="{% url 'survey_view' survey_name=survey.name %}">{{survey.name}}</a></h5>
+        <hr>
+    {% endfor %}
+{% endblock content %}

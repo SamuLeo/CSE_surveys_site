@@ -11,7 +11,7 @@ class FormSurvey(forms.Form):
     def get_answers_list_for_question(self, question):
         answers_list = []
         for answer in question.answers.all():
-            answers_list.append((answer.answer_sequence_number,answer.value))
+            answers_list.append((answer.id, answer.answer_sequence_number, answer.value))
         return answers_list
 
 
@@ -24,8 +24,8 @@ class FormSurvey(forms.Form):
             answers_list = self.get_answers_list_for_question(question)
             print(answers_list)
         # if "Single Choice" in question.type:
-            form_survey[question.__str__()] = self.get_answers_list_for_question(question)
-        return form_survey        
+            form_survey[question.__str__()] = answers_list
+        return form_survey
 
     # def get_survey(self):
     #     form_survey = []

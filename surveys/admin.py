@@ -61,13 +61,58 @@ class AnswerAdmin(admin.ModelAdmin):
         return obj.question.type
     get_question_type.short_description = 'Question\'s Type'
 
+class Patient_Survey_Question_AnswerAdmin(admin.ModelAdmin):
+    model = Patient_Survey_Question_Answer
+    list_display = ['date', 'get_patient', 'get_survey', 'get_question', 'get_answer',]
+
+    def get_patient(self, obj):
+        return obj.patient.__str__()
+    get_patient.short_description = 'Patient'
+
+    def get_survey(self, obj):
+        return obj.survey.name
+    get_survey.admin_order_field = 'name'
+    get_survey.short_description = 'Survey'
+
+    def get_question(self, obj):
+        return obj.question.__str__()
+    get_question.admin_order_field = 'question_sequence_number'
+    get_question.short_description = 'Question'
+
+    def get_answer(self, obj):
+        return obj.answer.__str__()
+    get_answer.short_description = 'Answer'
+
+class Caregiver_Survey_Question_AnswerAdmin(admin.ModelAdmin):
+    model = Caregiver_Survey_Question_Answer
+    list_display = ['date', 'get_caregiver', 'get_survey', 'get_question', 'get_answer',]
+
+    def get_caregiver(self, obj):
+        return obj.patient.__str__()
+    get_caregiver.short_description = 'Caregiver'
+
+    def get_survey(self, obj):
+        return obj.survey.name
+    get_survey.admin_order_field = 'name'
+    get_survey.short_description = 'Survey'
+
+    def get_question(self, obj):
+        return obj.question.__str__()
+    get_question.admin_order_field = 'question_sequence_number'
+    get_question.short_description = 'Question'
+
+    def get_answer(self, obj):
+        return obj.answer.__str__()
+    get_answer.short_description = 'Answer'
+
+
+
 
 admin.site.register(TransplantType)
 admin.site.register(Patient)
 admin.site.register(Caregiver, CaregiverAdmin)
 admin.site.register(Survey, SurveyAdmin)
-admin.site.register(QuestionType)
 admin.site.register(Question, QuestionAdmin)
 admin.site.register(Answer, AnswerAdmin)
-admin.site.register(Patient_Survey_Question_Answer)
-admin.site.register(Caregiver_Survey_Question_Answer)
+admin.site.register(Patient_Survey_Question_Answer, Patient_Survey_Question_AnswerAdmin)
+admin.site.register(Caregiver_Survey_Question_Answer, Caregiver_Survey_Question_AnswerAdmin)
