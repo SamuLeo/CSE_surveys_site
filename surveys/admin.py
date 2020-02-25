@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import TransplantType, Patient, Caregiver, Survey, QuestionType, Question, Answer, Patient_Survey_Question_Answer, Caregiver_Survey_Question_Answer
+from .models import DiagnosisType, TransplantType, Patient, Caregiver, Survey, QuestionType, Question, Answer, Patient_Survey_Question_Answer, Caregiver_Survey_Question_Answer
 
 # Register your models here.
 
@@ -109,6 +109,7 @@ class Caregiver_Survey_Question_AnswerAdmin(admin.ModelAdmin):
 
 
 admin.site.register(TransplantType)
+admin.site.register(DiagnosisType)
 admin.site.register(Patient)
 admin.site.register(Caregiver, CaregiverAdmin)
 admin.site.register(Survey, SurveyAdmin)

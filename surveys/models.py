@@ -24,6 +24,17 @@ class GenderType(models.Model):
         verbose_name="Type Of Gender"
         verbose_name_plural="Types Of Gender"
 
+class DiagnosisType(models.Model):
+
+    value = models.CharField(max_length=50, primary_key=True)
+
+    def __str__(self):
+        return self.value
+
+    class Meta:
+        verbose_name="Type Of Diagnosis"
+        verbose_name_plural="Types Of Diagnosis"
+
 
 class Patient(models.Model):
 
@@ -34,16 +45,18 @@ class Patient(models.Model):
     gender = models.ForeignKey(GenderType, on_delete=models.DO_NOTHING)
     birth_date = models.DateField(blank=True,null=True)
 
+    diagnosis_date = models.DateField(blank=True,null=True)
     recovery_date = models.DateField(blank=True,null=True)
     transplant_date = models.DateField(blank=True,null=True)
-    resignation_date = models.DateField(blank=True,null=True)
+    discharge_date = models.DateField(blank=True,null=True)
 
-    transplant_type = models.ForeignKey(TransplantType, on_delete=models.DO_NOTHING)
+    diagnosis_type = models.ForeignKey(DiagnosisType, on_delete=models.DO_NOTHING, blank=True,null=True)
+    transplant_type = models.ForeignKey(TransplantType, on_delete=models.DO_NOTHING, blank=True,null=True)
 
     number_of_sons = models.SmallIntegerField(blank=True,null=True)
 
     def __str__(self):
-        return self.name + " " + self.surname
+        return f"N° {self.id_patient} - {self.name} {self.surname}"
 
     class Meta:
         verbose_name="Patient"
@@ -62,6 +75,7 @@ class Caregiver(models.Model):
     relationship_with_patient = models.CharField(max_length=200)
     number_of_sons = models.SmallIntegerField(blank=True,null=True)
     cohabitant = models.BooleanField()
+    notes = models.TextField(blank=True,null=True)
 
     def __str__(self):
         return self.name + " " + self.surname
