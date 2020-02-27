@@ -1,11 +1,9 @@
-import xlwt
-
 from django.shortcuts import render, HttpResponse
 from django.views.generic.list import ListView
 
-from .form_survey import FormSurvey, FormExportSingleSurvey
-from .models import Patient, Caregiver, Answer, Survey,Patient_Survey_Question_Answer,Caregiver_Survey_Question_Answer
-
+from .form_survey import FormSurvey, FormExportSingleSurvey, FormExportPatientSurveys
+from .models import Patient, Caregiver, Answer, Survey,Patient_Survey_Question_Answer,Caregiver_Survey_Question_Answer, Question
+from .export_to_xls_module import export_to_xls_single_survey
 # Create your views here.
 
 
@@ -40,70 +38,9 @@ def fillSurvey(request, survey_name):
         context = {"survey_name": survey_name, "survey_description": survey_description, "form": form, "patients": patients}
     return render(request, "surveys/survey_template.html", context)
 
-def extractAnswerFromForm(self, request, survey_name):
-    pass
 
 def export_survey_home(request):
     return render(request, "surveys/export_survey_home.html")
-
-# def validate_form_export_single_survey_view(id_patient, survey, date):
-#
-#     try:
-#         Patient_Survey_Question_Answer.objects.get()
-
-
-def export_xls_patient_survey_date(request, patient, survey, date):
-
-    try:
-        raw_rows = Patient_Survey_Question_Answer.objects.filter(patient=patient, date=date,survey=survey).values_list('patient', 'date', 'survey', 'question', 'answer', )
-        rows = []
-        for raw_patient, raw_date, raw_survey, raw_question, raw_answer in raw_rows:
-            print(raw_date)
-            print(raw_survey)
-            print(raw_patient)
-            print(raw_question)
-            print(raw_answer)
-            question = Question.objects.get(pk=raw_question).__str__()
-
-            patient = Patient.objects.get(pk=raw_patient).__str__()
-            print(patient)
-            print(question)
-            answer = Answer.objects.get(pk=raw_answer).__str__()
-            print(answer)
-            rows.append((patient,date,survey,question,answer))
-            print(rows)
-    except:
-        # return HttpResponse("<h1>Non è possibile esportare il questionario</h1>")
-        pass
-
-    print(rows)
-    response = HttpResponse(content_type='application/ms-excel')
-    response['Content-Disposition'] = 'attachment; filename="questionario.xls"'
-
-    wb = xlwt.Workbook(encoding='utf-8')
-    ws = wb.add_sheet('Questionario')
-
-    # Sheet header, first row
-    row_num = 0
-
-    font_style = xlwt.XFStyle()
-    font_style.font.bold = True
-
-    columns = ['ID Paziente', 'Data', 'Questionario', 'Domanda', 'Risposta', ]
-
-    for col_num in range(len(columns)):
-        ws.write(row_num, col_num, columns[col_num], font_style)
-
-    # Sheet body, remaining rows
-    font_style = xlwt.XFStyle()
-
-    for row in rows:
-        row_num += 1
-        for col_num in range(len(row)):
-            ws.write(row_num, col_num, row[col_num], font_style)
-
-    wb.save(response)
-    return response
 
 
 def export_single_survey_view(request):
@@ -122,7 +59,7 @@ def export_single_survey_view(request):
             survey = Survey.objects.get(pk=survey_name)
             date = form.cleaned_data["date"]
             # if self.validate_form_export_single_survey_view(patient=patient, survey=survey, date=date):
-            return export_xls_patient_survey_date(request=request, patient=patient, survey=survey, date=date)
+            return export_to_xls_single_survey(request=request, patient=patient, survey=survey, date=date)
     else:
         # patients = Patient.objects.values_list("id_patient", "name", "surname")
         # surveys = Survey.objects.all()
@@ -131,7 +68,34 @@ def export_single_survey_view(request):
         form = FormExportSingleSurvey()
 
     context = {"form": form}
-    return render(request, "surveys/prova.html", context)
+    return render(request, "surveys/export_single_survey.html", context)
+
+
+def export_patient_surveys_view(request):
+    if request.method == "POST":
+        # id_patient = request.POST.get('id_patient')
+        # patient = Patient.objects.get(pk=id_patient)
+        # survey_name = request.POST.get('survey')
+        # survey = Survey.objects.get(pk=survey_name)
+        # date = request.POST.get('filling_date')
+        form = FormExportPatientSurveys(request.POST)
+
+        if form.is_valid():
+            id_patient = form.cleaned_data["patient"]
+            patient = Patient.objects.get(pk=id_patient)
+            survey_name = form.cleaned_data["survey"]
+            survey = Survey.objects.get(pk=survey_name)
+            # if self.validate_form_export_single_survey_view(patient=patient, survey=survey, date=date):
+            return export_to_xls_patient_surveys(request=request, patient=patient, survey=survey)
+    else:
+        # patients = Patient.objects.values_list("id_patient", "name", "surname")
+        # surveys = Survey.objects.all()
+        # context = {"patients": patients, "surveys": surveys}
+        # return render(request, "surveys/export_single_survey.html", context)
+        form = FormExportPatientSurveys()
+
+    context = {"form": form}
+    return render(request, "surveys/export_patient_surveys.html", context)
 
 
 class ListSurveyCBV(ListView):

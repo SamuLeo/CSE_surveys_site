@@ -64,6 +64,37 @@ class FormExportSingleSurvey(forms.Form):
     #     fields = ["patient", "survey", "date"]
 
 
+class FormExportPatientSurveys(forms.Form):
+
+    def get_surveys_names():
+        surveys_names_list = []
+        for survey_name in Survey.objects.all():
+            surveys_names_list.append((survey_name,survey_name))
+        return surveys_names_list
+
+    def get_patients():
+        patients_list = []
+        for patient in Patient.objects.all():
+            patients_list.append((patient.id_patient, patient.id_patient))
+        return patients_list
+
+    patient = forms.ChoiceField(
+                        choices = get_patients(),
+                        label="Numero Identificativo del Paziente:",
+                        widget = forms.Select(attrs=  {"class": "form-control  col-4",
+                                    "name":"patient",
+                                    "id":"patient"}),
+                        required=True)
+
+    survey = forms.ChoiceField(
+                        choices = get_surveys_names(),
+                        label="Nome del questionario:",
+                        widget=forms.Select(attrs=  {"class": "form-control col-4",
+                                    "name":"survey",
+                                    "id":"survey"}),
+                        required=True)
+
+
 class FormSurvey(forms.Form):
     #
     # id_paziente = forms.IntegerField()

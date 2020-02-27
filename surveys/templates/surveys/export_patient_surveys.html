@@ -2,11 +2,11 @@
 
 {% load crispy_forms_tags %}
 
-{% block head_title %}Esportazione Singolo Questionario{% endblock head_title %}
+{% block head_title %}Esportazione Questionari Paziente{% endblock head_title %}
 
 {% block content %}
 <div class="container pb-5">
-    <h1>Esportazione Singolo Questionario</h1>
+    <h1>Esportazione Questionari Paziente</h1>
     <form method="post" novalidate>
       {% csrf_token %}
       {{ form|crispy }}

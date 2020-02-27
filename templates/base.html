@@ -18,7 +18,7 @@
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/">Homepage</a>
+            <a class="navbar-brand" href="/"><span style="color:#bdb184"><strong>Homepage</strong></span></a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -32,7 +32,7 @@
                         </a>
                         <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <a class="dropdown-item" href="{% url 'list_survey_name'%}">Lista Questionari</a>
-                            <a class="dropdown-item" href="#">Visualizza Questionari Compilati</a>
+                            <a class="dropdown-item" href="{% url 'export_survey_home'%}">Esporta i questionari compilati in Excel</a>
                         </div>
                     </li>
                 </ul>
