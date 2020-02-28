@@ -2,6 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 
 from .models import Survey,Question,Answer,QuestionType,Patient, Patient_Survey_Question_Answer
+from .export_to_xls_module import export_to_xls_patient_surveys
 
 
 class FormExportSingleSurvey(forms.Form):
@@ -50,7 +51,6 @@ class FormExportSingleSurvey(forms.Form):
         survey_name = self.cleaned_data['survey']
         survey = Survey.objects.get(pk=survey_name)
 
-        filling_dates_list = []
         patient_surveys = Patient_Survey_Question_Answer.objects.filter(patient=patient, survey=survey, date=date)
 
 #       checking for empty QuerySet
@@ -95,14 +95,154 @@ class FormExportPatientSurveys(forms.Form):
                         required=True)
 
 
-class FormSurvey(forms.Form):
-    #
-    # id_paziente = forms.IntegerField()
-    # data = forms.DateField()
 
-    def __init__(self, survey_name):
-        super().__init__(self);
+
+
+class FormExportSurveysSinglePerson(forms.Form):
+
+    def get_surveys_names():
+        surveys_names_list = []
+        for survey_name in Survey.objects.all():
+            surveys_names_list.append((survey_name,survey_name))
+        return surveys_names_list
+
+    def get_patients():
+        patients_list = []
+        for patient in Patient.objects.all():
+            patients_list.append((patient.id_patient, patient.__str__()))
+        return patients_list
+
+
+
+    patient = forms.ChoiceField(
+                        choices = get_patients(),
+                        label="Numero Identificativo del Paziente:",
+                        widget = forms.Select(attrs=  {"class": "form-control  col-4",
+                                    "name":"patient",
+                                    "id":"patient"}),
+                        required=True)
+
+    surveys = forms.MultipleChoiceField(
+                        choices = get_surveys_names(),
+                        label = "Nomi dei questionari da esportare:",
+                        widget = forms.CheckboxSelectMultiple(attrs = {"multiple class": "form-control col-4",
+                                                                    "id": "surveys",
+                                                                    "name":"surveys",}),
+                        required=True)
+
+    date_from = forms.DateField(
+                        label = "Dalla Data:",
+                        widget = forms.widgets.DateInput(attrs={"class": "form-control col-4",
+                                                            "type": "date",
+                                                            }),
+                        required=True)
+
+    date_to = forms.DateField(
+                        label = "Alla Data: (Lasciare vuoto in caso si è interessati ad una data singola)",
+                        widget = forms.widgets.DateInput(attrs={"class": "form-control col-4",
+                                                            "type": "date",
+                                                            }),
+                        required=False)
+
+    def clean(self):
+        cleaned_data = super(FormExportSurveysSinglePerson, self).clean()
+        surveys_name = cleaned_data['surveys']
+        date_from = cleaned_data['date_from']
+        date_to = cleaned_data['date_to']
+        id_patient = cleaned_data['patient']
+        patient = Patient.objects.get(pk=id_patient)
+
+        if date_to is not None and date_from > date_to:
+            raise ValidationError("Specificare un range di date valido")
+
+        for survey_name in surveys_name:
+            survey = Survey.objects.get(pk=survey_name)
+            patient_surveys = Patient_Survey_Question_Answer.objects.filter(patient=patient, survey=survey)
+            for patient_survey in patient_surveys:
+                if date_to is None:
+                    if patient_survey.date == date_from:
+                        return cleaned_data
+                elif patient_survey.date > date_from and patient_survey.date < date_to:
+                    return cleaned_data
+# if the code arrive here the survey is not in the DB
+        if date_to is None:
+            raise ValidationError(f"Non sono stati compilati questionari dal paziente {patient} in data {date_from}")
+        else:
+            raise ValidationError(f"Non sono stati compilati questionari dal paziente {patient} dalla data {date_from} alla data {date_to}")
+
+
+    def process(self):
+        id_patient = self.cleaned_data["patient"]
+        patient = Patient.objects.get(pk=id_patient)
+        surveys_name = self.cleaned_data["surveys"]
+        survey_list = []
+        for survey_name in surveys_name:
+            survey_list.append(Survey.objects.get(pk=survey_name))
+        date_from = self.cleaned_data["date_from"]
+        # if self.cleaned_data["date_to"]:
+        date_to = self.cleaned_data["date_to"]
+        return export_to_xls_patient_surveys(patient=patient, surveys_list=survey_list,  date_from=date_from, date_to=date_to)
+        # else:
+            # return export_to_xls_patient_surveys(patient=patient, surveys_list=survey_list,  date_from=date_from)
+        # if self.validate_form_export_single_survey_view(patient=patient, survey=survey, date=date):
+
+
+    # def clean_date_from(self):
+
+        # date_from = self.cleaned_data['date_from']
+        # date_to = self.cleaned_data['date_to']
+        # id_patient = self.cleaned_data['patient']
+        # patient = Patient.objects.get(pk=id_patient)
+        # surveys_name = self.cleaned_data['surveys']
+        #
+        # if date_from > date_to:
+        #     raise ValidationError("Specificare un range di date valido")
+        #
+        # for survey_name in surveys_name:
+        #     survey = Survey.objects.get(pk=surveys_name)
+        #     patient_surveys = Patient_Survey_Question_Answer.objects.filter(patient=patient, survey=survey)
+        #     for patient_survey in patient_surveys:
+        #         if date_to is None:
+        #             if patient_survey.date is date_from:
+        #                 return date_from
+        #         elif patient_survey.date > date_from and patient_survey.date < date_to:
+        #             return date_from
+        #
+        # if date_to is None:
+        #     raise ValidationError(f"Non sono stati compilati questionari dal paziente {patient} in data {date_from}")
+        # else:
+        #     raise ValidationError(f"Non sono stati compilati questionari dal paziente {patient} dalla data {date_from} alla data {date_to}")
+
+
+
+class FormSurvey(forms.Form):
+
+    def __init__(self, survey_name, *args, **kwargs):
+        super(FormSurvey, self).__init__(*args, **kwargs);
         self.survey_name=survey_name
+
+    def get_patients():
+        patients_list = []
+        for patient in Patient.objects.all():
+            patients_list.append((patient.id_patient, patient.__str__()))
+        return patients_list
+
+
+
+    patient = forms.ChoiceField(
+                        choices = get_patients(),
+                        label="Numero Identificativo del Paziente:",
+                        widget = forms.Select(attrs=  {"class": "form-control  col-4",
+                                    "name":"patient",
+                                    "id":"patient"}),
+                        required=True)
+
+    date = forms.DateField(
+                        label = "Data di compilazione:",
+                        widget = forms.widgets.DateInput(attrs={"class": "form-control col-4",
+                                                            "type": "date",
+                                                            }),
+                        required=True)
 
 
     def get_answers_list_for_question(self, question):
@@ -113,6 +253,7 @@ class FormSurvey(forms.Form):
 
 
     def get_survey(self):
+        # self.survey_name = survey_name
         form_survey = {}
         survey = Survey.objects.get(pk=self.survey_name)
         for question in survey.questions.all():
@@ -121,6 +262,44 @@ class FormSurvey(forms.Form):
         # if "Single Choice" in question.type:
             form_survey[question.__str__()] = answers_list
         return form_survey
+
+
+    def clean_date(self):
+
+        date = self.cleaned_data['date']
+        id_patient = self.cleaned_data['patient']
+        patient = Patient.objects.get(pk=id_patient)
+        survey = Survey.objects.get(pk=self.survey_name)
+
+        patient_surveys = Patient_Survey_Question_Answer.objects.filter(patient=patient, survey=survey, date=date)
+
+#       checking for empty QuerySet
+        if patient_surveys:
+            raise ValidationError(f"Il questionario {survey} è stato già compilato dal paziente {patient} in data {date}")
+
+        return date
+
+
+    def process(self, request):
+        id_patient = self.cleaned_data['patient']
+        patient = Patient.objects.get(pk=id_patient)
+        survey = Survey.objects.get(pk=self.survey_name)
+        date = self.cleaned_data['date']
+
+        for question in survey.questions.all():
+            if question.type.__str__() == "Instructions in compound question":
+                continue
+            print(question)
+            id_answer = request.POST.get(question.__str__())
+            answer = Answer.objects.get(pk=id_answer)
+            patient_answer = Patient_Survey_Question_Answer(
+                                patient=patient,
+                                survey=survey,
+                                question=question,
+                                answer=answer,
+                                date=date)
+            patient_answer.save()
+
 
     # def validate(self, request):
     #     """Check if the specified patient id exist."""

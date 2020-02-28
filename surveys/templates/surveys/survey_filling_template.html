@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% load survey_tags %}
+
+
+{% block head_title %}{{survey_name}}{% endblock head_title %}
+
+{% block content %}
+<div class="container">
+    <div class="container pb-3">
+        <h1>{{survey_name}}</h1>
+        <p>{{survey_description}}</p>
+    </div>
+        <div class="container">
+            <form class="pb-5" action="" method="post" novalidate>
+                {% csrf_token %}
+                <!-- extract key, value from dict -->
+                <span class="container pb-3">{{form|crispy}}</span>
+
+                {% for question, answers in survey.items %}
+                    <div class="container">
+                        <legend>{{question}}</legend>
+                        {% for answer_id, answer_sequence_number, answer_content in answers %}
+                            <div class="form-check ">
+                                <input class="form-check-input"
+                                 type="radio"
+                                 name="{{question}}"
+                                 id="{{question}}{{answer_sequence_number}}"
+                                 value="{{answer_id}}"
+                                 required>
+                                <label class="form-check-label" for={{question}}{{answer_sequence_number}}>{{answer_sequence_number}} - {{answer_content}}</label>
+                            </div>
+                            <hr>
+                        {% endfor %}
+                    </div>
+                    {#% if {{question.question_subsequence_number}} == None %#}
+                        <br>
+                    {#% endif %#}
+                {% endfor %}
+                <input type="submit" class="btn btn-primary" value="Invia">
+            </form>
+    </div>
+</div>
+{% endblock content %}
