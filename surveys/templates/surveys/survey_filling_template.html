@@ -13,30 +13,44 @@
         <p>{{survey_description}}</p>
     </div>
         <div class="container">
-            <form class="pb-5" action="" method="post" novalidate>
+            <form class="pb-5" action="" method="post">
                 {% csrf_token %}
-                <!-- extract key, value from dict -->
-                <span class="container pb-3">{{form|crispy}}</span>
-
+                <!-- form is composed by patient and date field -->
+                <span class="container pb-3" novalidate>{{form|crispy}}</span>
+                <!-- survey contains all the questions with the relative answers with this format:
+                    {(question.__str__(), question.type), [answers_for_this_question]}-->
                 {% for question, answers in survey.items %}
                     <div class="container">
-                        <legend>{{question}}</legend>
-                        {% for answer_id, answer_sequence_number, answer_content in answers %}
-                            <div class="form-check ">
-                                <input class="form-check-input"
-                                 type="radio"
-                                 name="{{question}}"
-                                 id="{{question}}{{answer_sequence_number}}"
-                                 value="{{answer_id}}"
-                                 required>
-                                <label class="form-check-label" for={{question}}{{answer_sequence_number}}>{{answer_sequence_number}} - {{answer_content}}</label>
-                            </div>
-                            <hr>
-                        {% endfor %}
+                        <legend>{{question.0}}</legend>
+                        {% if question.1 == "Single Choice" %}
+                            {% for answer_id, answer_sequence_number, answer_content in answers %}
+                                <div class="form-check ">
+                                    <input class="form-check-input"
+                                     type="radio"
+                                     name="{{question.0}}"
+                                     id="{{question.0}}{{answer_sequence_number}}"
+                                     value="{{answer_id}}"
+                                     required>
+                                    <label class="form-check-label" for={{question.0}}{{answer_sequence_number}}>{{answer_sequence_number}} - {{answer_content}}</label>
+                                </div>
+                                <hr>
+                            {% endfor %}
+                        {% elif question.1 == "Multiple Choice" %}
+                            {% for answer_id, answer_sequence_number, answer_content in answers %}
+                                <div class="form-check ">
+                                    <input class="form-check-input"
+                                     type="checkbox"
+                                     name="{{question.0}}"
+                                     id="{{question.0}}{{answer_sequence_number}}"
+                                     value="{{answer_id}}"
+                                     required>
+                                    <label class="form-check-label" for={{question.0}}{{answer_sequence_number}}>{{answer_sequence_number}} - {{answer_content}}</label>
+                                </div>
+                                <hr>
+                            {% endfor %}
+                        {% endif %}
                     </div>
-                    {#% if {{question.question_subsequence_number}} == None %#}
-                        <br>
-                    {#% endif %#}
+
                 {% endfor %}
                 <input type="submit" class="btn btn-primary" value="Invia">
             </form>

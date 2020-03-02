@@ -88,6 +88,7 @@ class Caregiver(models.Model):
 class Survey(models.Model):
 
     name = models.CharField(primary_key=True, max_length=100)
+    short_name = models.CharField(max_length=30, blank=True, null=True)
 
     description = models.TextField(blank=True, null=True)
     patient_survey = models.BooleanField()

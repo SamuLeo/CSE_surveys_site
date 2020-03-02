@@ -12,10 +12,10 @@ def fillSurvey(request, survey_name):
         form = FormSurvey(survey_name, request.POST)
 
         if form.is_valid():
-            try:
-                form.process(request)
-            except:
-                return render(request, "surveys/survey_filling_error.html")
+            # try:
+            form.process(request)
+            # except:
+            #     return render(request, "surveys/survey_filling_error.html")
 
             return render(request, "surveys/survey_filling_success.html")
     else:
@@ -98,9 +98,9 @@ def export_surveys_single_person_view(request):
 
         if form.is_valid():
             # try:
-            form.process()
+            return form.process()
             # except:
-                # return render(request, "surveys/export_error.html")
+            #     return render(request, "surveys/export_error.html")
 
             # print(form.cleaned_data["patient"])
             # id_patient = form.cleaned_data["patient"]

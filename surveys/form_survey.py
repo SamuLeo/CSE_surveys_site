@@ -96,8 +96,6 @@ class FormExportPatientSurveys(forms.Form):
 
 
 
-
-
 class FormExportSurveysSinglePerson(forms.Form):
 
     def get_surveys_names():
@@ -259,8 +257,9 @@ class FormSurvey(forms.Form):
         for question in survey.questions.all():
         # caso di domanda composta da gestire qua
             answers_list = self.get_answers_list_for_question(question)
+            key = (question.__str__(), question.type.__str__())
         # if "Single Choice" in question.type:
-            form_survey[question.__str__()] = answers_list
+            form_survey[key] = answers_list
         return form_survey
 
 
@@ -279,8 +278,22 @@ class FormSurvey(forms.Form):
 
         return date
 
+    def clean_patient(self):
+
+        id_patient = self.cleaned_data['patient']
+        patient = Patient.objects.get(pk=id_patient)
+        survey = Survey.objects.get(pk=self.survey_name)
+
+        if (patient.gender == "M" and survey_name == "Psychological Distress Inventory - PDI (Versione Femminile)") or (patient.gender == "F" and survey_name == "Psychological Distress Inventory - PDI (Versione Maschile)"):
+            raise ValidationError("Scegliere la versione del questionario(PDI) adeguata al genere del paziente")
+
+        return id_patient
+
+
 
     def process(self, request):
+        patient_answers = []
+
         id_patient = self.cleaned_data['patient']
         patient = Patient.objects.get(pk=id_patient)
         survey = Survey.objects.get(pk=self.survey_name)
@@ -289,15 +302,31 @@ class FormSurvey(forms.Form):
         for question in survey.questions.all():
             if question.type.__str__() == "Instructions in compound question":
                 continue
-            print(question)
-            id_answer = request.POST.get(question.__str__())
-            answer = Answer.objects.get(pk=id_answer)
-            patient_answer = Patient_Survey_Question_Answer(
-                                patient=patient,
-                                survey=survey,
-                                question=question,
-                                answer=answer,
-                                date=date)
+            elif question.type.__str__() == "Single Choice":
+                id_answer = request.POST.get(question.__str__())
+                print(question)
+                print(id_answer)
+                answer = Answer.objects.get(pk=id_answer)
+                patient_answer = Patient_Survey_Question_Answer(
+                                    patient=patient,
+                                    survey=survey,
+                                    question=question,
+                                    answer=answer,
+                                    date=date)
+                patient_answers.append(patient_answer)
+            elif question.type.__str__() == "Multiple Choice":
+                ids_answers = request.POST.get(question.__str__())
+                for id_answer in ids_answers:
+                    answer = Answer.objects.get(pk=id_answer)
+                    patient_answer = Patient_Survey_Question_Answer(
+                                        patient=patient,
+                                        survey=survey,
+                                        question=question,
+                                        answer=answer,
+                                        date=date)
+                patient_answers.append(patient_answer)
+    #patient_answers creates a transaction: either all answers are written or nothing, to prevent DB corruption in case of error
+        for patient_answer in patient_answers:
             patient_answer.save()
 
 

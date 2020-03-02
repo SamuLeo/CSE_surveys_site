@@ -1,4 +1,4 @@
-import xlwt
+import xlwt, re
 
 from django.shortcuts import render, HttpResponse
 from .models import Patient, Caregiver, Answer, Survey,Patient_Survey_Question_Answer,Caregiver_Survey_Question_Answer, Question
@@ -102,7 +102,6 @@ def get_surveys_of_patient(patient, surveys_list, date_from, date_to):
         surveys_of_one_type_list.append(single_survey)
 
         surveys_dict[survey.__str__()] = surveys_of_one_type_list
-        print(surveys_dict)
 
     return surveys_dict
 
@@ -115,19 +114,23 @@ def write_surveys_of_patient_on_work_sheet(work_sheet, row_num, initial_col_num,
     """ This function write all the surveys passed to it through surveys_list(list of lists) to the work_sheet, the surveys abs
         passed must be of the same type, the row_num and the column num are used as starting point"""
 
-    head = [("Paziente", patient.__str__())]
+    head = ("Paziente", patient.__str__())
     font_style = xlwt.XFStyle()
     font_style.font.bold = True
     for col_num in range(len(head)):
         work_sheet.write(row_num, col_num + initial_col_num, head[col_num], font_style)
-        row_num += 1
+
+    row_num += 1
 
     for survey in surveys_list:
         header = survey[:2]
         survey_content = survey[2:]
 
-        for col_num in range(len(header)):
-            work_sheet.write(row_num, col_num + initial_col_num, header[col_num], font_style)
+        font_style = xlwt.XFStyle()
+        font_style.font.bold = True
+        for header_element in header:
+            for col_num in range(len(header_element)):
+                work_sheet.write(row_num, col_num + initial_col_num, header_element[col_num], font_style)
             row_num += 1
 
         # Sheet body, remaining rows
@@ -138,11 +141,23 @@ def write_surveys_of_patient_on_work_sheet(work_sheet, row_num, initial_col_num,
                 work_sheet.write(row_num, col_num + initial_col_num, row[col_num], font_style)
             row_num += 1
 
-    col_growth = max(range(len(head)), range(len(header)), range(len(row)))
+    col_growth = max(len(head), len(header), len(row))
     col_num = initial_col_num + col_growth
     return (row_num, col_num)
 
+def get_valid_work_sheet_name(survey_name):
+    """This function return a valid name for the Excel work sheet associated to the survey"""
 
+    survey = Survey.objects.get(pk=survey_name)
+
+    if survey.short_name is not None:
+        pattern = re.compile(r'[\\/\*\?:\[\] -]')
+        work_sheet_name = pattern.sub("_", survey.short_name)
+    else:
+        pattern = re.compile(r'[\\/\*\?:\[\] -]')
+        work_sheet_name = pattern.sub("_", survey_name)[:31]
+
+    return work_sheet_name
 
 def export_to_xls_patient_surveys(patient, surveys_list, date_from, date_to):
 
@@ -157,8 +172,10 @@ def export_to_xls_patient_surveys(patient, surveys_list, date_from, date_to):
     row_num = 0
     col_num = 0
 
-    for survey_name, surveys_of_one_type_list in surveys_dict:
-        work_sheet = work_book.add_sheet(survey_name)
+    for survey_name in surveys_dict:
+        work_sheet = work_book.add_sheet(get_valid_work_sheet_name(survey_name=survey_name))
+
+        surveys_of_one_type_list = surveys_dict[survey_name]
         write_surveys_of_patient_on_work_sheet(work_sheet=work_sheet, row_num=row_num, initial_col_num = col_num, patient=patient, surveys_list=surveys_of_one_type_list)
 
     work_book.save(response)
@@ -261,7 +278,7 @@ def export_to_xls_single_survey(request, patient, survey, date):
 
         head = [("Questionario", survey)]
         header = [('Questionario', survey.__str__()), ('Paziente', patient.__str__()), ('Data(y-m-d)', date.__str__()),]
-        columns = ['Numero Sequenza Domanda', 'Domanda', 'Numero Sequenza Risposta', 'Risposta']
+        columns = [('Numero Sequenza Domanda', 'Domanda', 'Numero Sequenza Risposta', 'Risposta')]
 
     #
         for row in header:
