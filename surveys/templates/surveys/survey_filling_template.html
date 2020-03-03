@@ -1,8 +1,6 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
 
-{% load survey_tags %}
-
 
 {% block head_title %}{{survey_name}}{% endblock head_title %}
 
@@ -20,11 +18,11 @@
                 <!-- survey contains all the questions with the relative answers with this format:
                     {(question.__str__(), question.type), [answers_for_this_question]}-->
                 {% for question, answers in survey.items %}
-                    <div class="container">
-                        <legend>{{question.0}}</legend>
+                    <div class="container pb-5">
+                        <legend><h5>{{question.0}}</h5></legend>
                         {% if question.1 == "Single Choice" %}
                             {% for answer_id, answer_sequence_number, answer_content in answers %}
-                                <div class="form-check ">
+                                <div class="form-check">
                                     <input class="form-check-input"
                                      type="radio"
                                      name="{{question.0}}"
@@ -33,7 +31,7 @@
                                      required>
                                     <label class="form-check-label" for={{question.0}}{{answer_sequence_number}}>{{answer_sequence_number}} - {{answer_content}}</label>
                                 </div>
-                                <hr>
+                                <!-- <hr> -->
                             {% endfor %}
                         {% elif question.1 == "Multiple Choice" %}
                             {% for answer_id, answer_sequence_number, answer_content in answers %}
@@ -46,8 +44,15 @@
                                      required>
                                     <label class="form-check-label" for={{question.0}}{{answer_sequence_number}}>{{answer_sequence_number}} - {{answer_content}}</label>
                                 </div>
-                                <hr>
                             {% endfor %}
+                        {% elif question.1 == "Alphanumerical Input" %}
+                            <div class="form-group">
+                              <textarea class="form-control" name="{{question.0}}" id="{{question.0}}" rows="5"></textarea>
+                            </div>
+                        {% elif question.1 == "Range Input [0-10]" %}
+                        <div class="form-group">
+                            <input type="range" class="custom-range" min="0" max="10" step="1" name="{{question.0}}" id="{{question.0}}">
+                        </div>
                         {% endif %}
                     </div>
 

@@ -152,12 +152,26 @@ def get_valid_work_sheet_name(survey_name):
 
     if survey.short_name is not None:
         pattern = re.compile(r'[\\/\*\?:\[\] -]')
-        work_sheet_name = pattern.sub("_", survey.short_name)
+        work_sheet_name = pattern.sub("_", survey.short_name)[:31]
     else:
         pattern = re.compile(r'[\\/\*\?:\[\] -]')
         work_sheet_name = pattern.sub("_", survey_name)[:31]
 
     return work_sheet_name
+
+def get_sheet_by_name(work_book, sheet_name):
+    """Get a sheet by name from xlwt.Workbook.
+    Returns None if no sheet with the given name is present.
+    """
+    try:
+        for idx in itertools.count():
+            sheet = work_book.get_sheet(idx)
+            if sheet.name == sheet_name:
+                return sheet
+    except IndexError:
+        return None
+
+
 
 def export_to_xls_patient_surveys(patient, surveys_list, date_from, date_to):
 
@@ -177,6 +191,41 @@ def export_to_xls_patient_surveys(patient, surveys_list, date_from, date_to):
 
         surveys_of_one_type_list = surveys_dict[survey_name]
         write_surveys_of_patient_on_work_sheet(work_sheet=work_sheet, row_num=row_num, initial_col_num = col_num, patient=patient, surveys_list=surveys_of_one_type_list)
+
+    work_book.save(response)
+    return response
+
+
+
+
+
+
+def export_to_xls_surveys(patients_list, surveys_list, date_from, date_to):
+
+    response = HttpResponse(content_type='application/ms-excel')
+    if len(patients_list) == 1:
+        response['Content-Disposition'] = f"attachment; filename=questionari_{patient}.xls"
+    else:
+        response['Content-Disposition'] = f"attachment; filename=questionari.xls"
+
+    work_book = xlwt.Workbook(encoding='utf-8')
+    # Setting initial row and column
+    initial_coordinates = (0,0)
+
+    surveys_dict_list = []
+
+    for patient in patients_list:
+        # surveys_dict is composed by the __str__() of a survey as key and the list of the survey of that type as value of the patient,
+        # already formatted to be written in a Excel sheet
+        surveys_dict = get_surveys_of_patient(patient=patient, surveys_list=surveys_list, date_from=date_from, date_to=date_to)
+        surveys_dict_list.append(surveys_dict)
+
+
+        for survey_name in surveys_dict:
+            work_sheet = work_book.add_sheet(get_valid_work_sheet_name(survey_name=survey_name))
+
+            surveys_of_one_type_list = surveys_dict[survey_name]
+            initial_coordinates = write_surveys_of_patient_on_work_sheet(work_sheet=work_sheet, row_num=initial_coordinates[0], initial_col_num=initial_coordinates[1], patient=patient, surveys_list=surveys_of_one_type_list)
 
     work_book.save(response)
     return response

@@ -3,19 +3,15 @@
 {% block head_title %}Homepage Esportazione questionari{% endblock head_title %}
 
 {% block content %}
-    <div class="container">
+    <div class="container pb-5">
         <h1><strong>Home Esportazione Questionari</strong></h1>
         <hr>
         <br>
         <h3>Tipi di esportazione:</h3>
         <hr>
         <br>
-        <h4><a href="{% url 'export_survey_single_person'%}">Singole Persone</a></h4>
+        <h4><a href="{% url 'export_surveys_single_person' %}">Singole Persone</a></h4>
         <br>
-        <h4><a href="#">Tutti</a></h4>
-        <br>
-        <h4><a href="#">Solo Maschi</a></h4>
-        <br>
-        <h4><a href="#">Solo Femmine</a></h4>
+        <h4><a href="{% url 'export_surveys' %}">Gruppi di Persone</a></h4>
     </div>
 {% endblock content %}

@@ -127,7 +127,7 @@ class Question(models.Model):
         if self.question_subsequence_number is not None:
             return str(self.question_sequence_number) + "." + str(self.question_subsequence_number) + " - " + self.content
         elif str(self.type.value) == "Instructions in compound question":
-            return str(self.question_sequence_number)  + " - " + self.content
+            return self.content
         else:
             return str(self.question_sequence_number) + " - " + self.content
 
@@ -147,7 +147,7 @@ class Question(models.Model):
 class Answer(models.Model):
 
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="answers")
-    answer_sequence_number = models.SmallIntegerField()
+    answer_sequence_number = models.SmallIntegerField(null=True, blank = True)
 
     value = models.CharField(max_length=300)
 
