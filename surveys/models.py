@@ -78,7 +78,7 @@ class Caregiver(models.Model):
     notes = models.TextField(blank=True,null=True)
 
     def __str__(self):
-        return self.name + " " + self.surname
+        return f"{self.name}  {self.surname} caregiver di {self.patient.__str__()}"
 
     class Meta:
         verbose_name="Caregiver"

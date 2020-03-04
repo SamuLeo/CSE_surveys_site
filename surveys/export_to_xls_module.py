@@ -52,8 +52,7 @@ from .models import Patient, Caregiver, Answer, Survey,Patient_Survey_Question_A
 
 
 
-def get_surveys_of_patient(patient, surveys_list, date_from, date_to):
-    surveys_dict = {}
+def get_surveys_of_patient(surveys_dict, patient, surveys_list, date_from, date_to):
     for survey in surveys_list:
         if date_to:
             raw_rows = Patient_Survey_Question_Answer.objects.filter(patient=patient,
@@ -67,7 +66,8 @@ def get_surveys_of_patient(patient, surveys_list, date_from, date_to):
                                                                             date=date_from,
                                                                             survey=survey).values_list('date',
                                                                                                     'question',
-                                                                                                     'answer', )
+                                                                                                    'answer', )
+        dict_patient_list_of_surveys = {}
         # list of lists
         surveys_of_one_type_list = []
         # list
@@ -101,6 +101,7 @@ def get_surveys_of_patient(patient, surveys_list, date_from, date_to):
 # necessary for final survey where the date check won't work
         surveys_of_one_type_list.append(single_survey)
 
+        dict_patient_list_of_surveys[("Paziente", patient.__str__())] = surveys_of_one_type_list
         surveys_dict[survey.__str__()] = surveys_of_one_type_list
 
     return surveys_dict
@@ -212,14 +213,12 @@ def export_to_xls_surveys(patients_list, surveys_list, date_from, date_to):
     # Setting initial row and column
     initial_coordinates = (0,0)
 
-    surveys_dict_list = []
+    surveys_dict = {}
 
     for patient in patients_list:
         # surveys_dict is composed by the __str__() of a survey as key and the list of the survey of that type as value of the patient,
         # already formatted to be written in a Excel sheet
-        surveys_dict = get_surveys_of_patient(patient=patient, surveys_list=surveys_list, date_from=date_from, date_to=date_to)
-        surveys_dict_list.append(surveys_dict)
-
+        surveys_dict = get_surveys_of_patient(surveys_dict=surveys_dict, patient=patient, surveys_list=surveys_list, date_from=date_from, date_to=date_to)
 
         for survey_name in surveys_dict:
             work_sheet = work_book.add_sheet(get_valid_work_sheet_name(survey_name=survey_name))

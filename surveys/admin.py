@@ -85,11 +85,7 @@ class Patient_Survey_Question_AnswerAdmin(admin.ModelAdmin):
 
 class Caregiver_Survey_Question_AnswerAdmin(admin.ModelAdmin):
     model = Caregiver_Survey_Question_Answer
-    list_display = ['date', 'get_caregiver', 'get_survey', 'get_question', 'get_answer',]
-
-    def get_caregiver(self, obj):
-        return obj.patient.__str__()
-    get_caregiver.short_description = 'Caregiver'
+    list_display = ['date', 'caregiver', 'get_survey', 'get_question', 'get_answer',]
 
     def get_survey(self, obj):
         return obj.survey.name

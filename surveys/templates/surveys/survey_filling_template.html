@@ -14,7 +14,7 @@
             <form class="pb-5" action="" method="post">
                 {% csrf_token %}
                 <!-- form is composed by patient and date field -->
-                <span class="container pb-3" novalidate>{{form|crispy}}</span>
+                <div class="container pb-3" novalidate>{{form|crispy}}</div>
                 <!-- survey contains all the questions with the relative answers with this format:
                     {(question.__str__(), question.type), [answers_for_this_question]}-->
                 {% for question, answers in survey.items %}
@@ -57,7 +57,9 @@
                     </div>
 
                 {% endfor %}
-                <input type="submit" class="btn btn-primary" value="Invia">
+                <div class="container">
+                    <input type="submit" class="btn btn-primary" value="Salva">
+                </div>
             </form>
     </div>
 </div>

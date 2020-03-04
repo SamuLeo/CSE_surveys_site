@@ -3,11 +3,34 @@
 {% block title %}Lista Questionari{% endblock title %}
 
 {% block content %}
-    <br>
-    <h2>Scegliere il questionario da inserire:</h2><br><br>
-    <br>
-    {% for survey in surveys %}
-        <h5><a href="{% url 'survey_view' survey_name=survey.name %}">{{survey.name}}</a></h5>
-        <hr>
-    {% endfor %}
+
+        <div class="container pb-5">
+            <h2>Scegliere il questionario da inserire:</h2>
+        </div>
+        <div class="container pb-5">
+            <h2>Questionari per pazienti</h2>
+        </div>
+        <div class="container">
+            {% for survey in surveys %}
+                {%if survey.patient_survey %}
+                    <h5><a href="{% url 'survey_view' survey_name=survey.name %}">{{survey.name}}</a></h5>
+                    <hr>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="container pb-5 pt-5">
+            <h2>Questionari per caregivers</h2>
+        </div>
+        <div class="container">
+            {% for survey in surveys %}
+                {%if not survey.patient_survey %}
+                    <h5><a href="{% url 'survey_view' survey_name=survey.name %}">{{survey.name}}</a></h5>
+                    <hr>
+                {% endif %}
+            {% endfor %}
+
+
+    </div>
+
 {% endblock content %}

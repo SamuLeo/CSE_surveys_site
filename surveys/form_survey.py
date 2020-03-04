@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from .models import Survey,Question,Answer,QuestionType,Patient, Patient_Survey_Question_Answer
+from .models import Survey,Question,Answer,QuestionType,Patient, Patient_Survey_Question_Answer, Caregiver, Caregiver_Survey_Question_Answer
 from .export_to_xls_module import export_to_xls_patient_surveys
 
 
@@ -236,7 +236,7 @@ class FormExportSurveys(forms.Form):
                                 widget=forms.RadioSelect(attrs={
                                                             "class": "form-check-input pb-5",
                                                             "type": "radio",
-                                                            "required": "required"}),
+                                                            "required": "true"}),
                                 required=True)
 
     surveys = forms.MultipleChoiceField(
@@ -245,14 +245,14 @@ class FormExportSurveys(forms.Form):
                         widget = forms.CheckboxSelectMultiple(attrs = {"multiple class": "form-control col-4",
                                                                     "id": "surveys",
                                                                     "name":"surveys",
-                                                                    "required": "required",}),
+                                                                    "required": "true",}),
                         required=True)
 
     date_from = forms.DateField(
                         label = "Dalla Data:",
                         widget = forms.widgets.DateInput(attrs={"class": "form-control col-4",
                                                             "type": "date",
-                                                            "required": "required"
+                                                            "required": "true"
                                                             }),
                         required=True)
 
@@ -264,7 +264,7 @@ class FormExportSurveys(forms.Form):
                         required=False)
 
 
-    def get_filtered_patients_list(patient_filter):
+    def get_filtered_patients_list(self, patient_filter):
         patients_list = []
         if patient_filter == 1:
             for patient in Patient.objects.get(gender=GenderType.objects.get(pk="M")):
@@ -287,7 +287,6 @@ class FormExportSurveys(forms.Form):
         date_from = cleaned_data['date_from']
         date_to = cleaned_data['date_to']
         patient_filter = cleaned_data['patient_filter']
-
         patients_list = self.get_filtered_patients_list(patient_filter=patient_filter)
 
         if date_to is not None and date_from > date_to:
@@ -313,7 +312,8 @@ class FormExportSurveys(forms.Form):
     def process(self):
         id_patient = self.cleaned_data["patient"]
         # export_to_xls_patient_surveys expect a list, [] are necessary
-        patient = [Patient.objects.get(pk=id_patient)]
+        patient_filter = cleaned_data['patient_filter']
+        patients_list = self.get_filtered_patients_list(patient_filter=patient_filter)
         surveys_name = self.cleaned_data["surveys"]
         survey_list = []
         for survey_name in surveys_name:
@@ -321,16 +321,16 @@ class FormExportSurveys(forms.Form):
         date_from = self.cleaned_data["date_from"]
         # if self.cleaned_data["date_to"]:
         date_to = self.cleaned_data["date_to"]
-        return export_to_xls_patient_surveys(patients_list=patient, surveys_list=survey_list,  date_from=date_from, date_to=date_to)
+        return export_to_xls_surveys(patients_list=patients_list, surveys_list=survey_list,  date_from=date_from, date_to=date_to)
 
 
 
 
 
-class FormSurvey(forms.Form):
+class FormSurveyPatient(forms.Form):
 
     def __init__(self, survey_name, *args, **kwargs):
-        super(FormSurvey, self).__init__(*args, **kwargs);
+        super(FormSurveyPatient, self).__init__(*args, **kwargs);
         self.survey_name=survey_name
 
     def get_patients():
@@ -340,10 +340,9 @@ class FormSurvey(forms.Form):
         return patients_list
 
 
-
     patient = forms.ChoiceField(
                         choices = get_patients(),
-                        label="Numero Identificativo del Paziente:",
+                        label="Paziente:",
                         widget = forms.Select(attrs=  {"class": "form-control  col-4",
                                     "name":"patient",
                                     "id":"patient"}),
@@ -379,85 +378,168 @@ class FormSurvey(forms.Form):
 
     def clean(self):
 
-        cleaned_data = super(FormSurvey, self).clean()
+        cleaned_data = super(FormSurveyPatient, self).clean()
         id_patient = cleaned_data['patient']
         patient = Patient.objects.get(pk=id_patient)
+        date = cleaned_data['date']
         survey = Survey.objects.get(pk=self.survey_name)
-
         if (patient.gender.__str__() == "M" and survey.__str__() == "Psychological Distress Inventory - PDI Versione Femminile") or (patient.gender.__str__() == "F" and survey.__str__() == "Psychological Distress Inventory - PDI Versione Maschile"):
             raise ValidationError("Scegliere la versione del questionario(PDI) adeguata al genere del paziente")
-            return id_patient
-
-        date = cleaned_data['date']
         patient_surveys = Patient_Survey_Question_Answer.objects.filter(patient=patient, survey=survey, date=date)
-
-#       checking for empty QuerySet
+#       checking for empty QuerySet, if not empty the survey ha already been filled
         if patient_surveys:
             raise ValidationError(f"Il questionario {survey} è stato già compilato dal paziente {patient} in data {date}")
-
         return cleaned_data
 
 
-
-    def process(self, request):
+    def get_patient_answers_from_form(self, request, patient, survey, date):
         patient_answers = []
-
-        id_patient = self.cleaned_data['patient']
-        patient = Patient.objects.get(pk=id_patient)
-        survey = Survey.objects.get(pk=self.survey_name)
-        date = self.cleaned_data['date']
-
         for question in survey.questions.all():
             if question.type.__str__() == "Instructions in compound question":
                 continue
             elif question.type.__str__() == "Single Choice":
                 id_answer = request.POST.get(question.__str__())
                 answer = Answer.objects.get(pk=id_answer)
-                patient_answer = Patient_Survey_Question_Answer(
-                                    patient=patient,
-                                    survey=survey,
-                                    question=question,
-                                    answer=answer,
-                                    date=date)
+                patient_answer = Patient_Survey_Question_Answer(patient=patient, survey=survey, question=question, answer=answer, date=date)
                 patient_answers.append(patient_answer)
             elif question.type.__str__() == "Multiple Choice":
                 ids_answers = request.POST.get(question.__str__())
                 for id_answer in ids_answers:
                     answer = Answer.objects.get(pk=id_answer)
-                    patient_answer = Patient_Survey_Question_Answer(
-                                        patient=patient,
-                                        survey=survey,
-                                        question=question,
-                                        answer=answer,
-                                        date=date)
+                    patient_answer = Patient_Survey_Question_Answer(patient=patient, survey=survey, question=question, answer=answer, date=date)
                     patient_answers.append(patient_answer)
             elif question.type.__str__() == "Alphanumerical Input":
                 answer_value = request.POST.get(question.__str__())
-                Answer(question=question, answer_sequence_number=1, value=answer_value).save()
+                Answer(question=question, value=answer_value).save()
                 answer = Answer.objects.get(question=question, value=answer_value)
-                patient_answer = Patient_Survey_Question_Answer(
-                                        patient=patient,
-                                        survey=survey,
-                                        question=question,
-                                        answer=answer,
-                                        date=date)
+                patient_answer = Patient_Survey_Question_Answer(patient=patient, survey=survey, question=question, answer=answer, date=date)
                 patient_answers.append(patient_answer)
             elif question.type.__str__() == "Range Input [0-10]":
                 # get the value of the answer, thanks to that and the question it is possible to retrieve the Answer from DB(necessary for Patient_Survey_Question_Answer)
                 answer_value = request.POST.get(question.__str__())
                 answer = Answer.objects.get(question=question, value=answer_value)
-                patient_answer = Patient_Survey_Question_Answer(
-                                        patient=patient,
-                                        survey=survey,
-                                        question=question,
-                                        answer=answer,
-                                        date=date)
+                patient_answer = Patient_Survey_Question_Answer(patient=patient, survey=survey, question=question, answer=answer, date=date)
                 patient_answers.append(patient_answer)
+        return patient_answers
+
+
+    def process(self, request):
+        patient_answers_list = []
+        date = self.cleaned_data['date']
+        id_patient = self.cleaned_data['patient']
+        patient = Patient.objects.get(pk=id_patient)
+        survey = Survey.objects.get(pk=self.survey_name)
+
+        patient_answers_list = self.get_patient_answers_from_form(request=request, patient=patient, survey=survey, date=date)
     #patient_answers creates a transaction: either all answers are written or nothing, to prevent DB corruption in case of error
-        for patient_answer in patient_answers:
-            patient_answer.save()
+        for patient_answers in patient_answers_list:
+            patient_answers.save()
 
 
+
+class FormSurveyCaregiver(forms.Form):
+
+    def __init__(self, survey_name, *args, **kwargs):
+        super(FormSurveyCaregiver, self).__init__(*args, **kwargs);
+        self.survey_name=survey_name
+
+    def get_caregivers():
+        caregivers_list = []
+        for caregiver in Caregiver.objects.all():
+            caregivers_list.append((caregiver.id, caregiver.__str__()))
+        return caregivers_list
+
+
+    caregiver = forms.ChoiceField(
+                        choices = get_caregivers(),
+                        label="Caregiver:",
+                        widget = forms.Select(attrs=  {"class": "form-control  col-4",
+                                    "name":"patient",
+                                    "id":"patient"}),
+                        required=True)
+
+    date = forms.DateField(
+                        label = "Data di compilazione:",
+                        widget = forms.widgets.DateInput(attrs={"class": "form-control col-4",
+                                                            "type": "date",
+                                                            }),
+                        required=True)
+
+
+    def get_answers_list_for_question(self, question):
+        answers_list = []
+        for answer in question.answers.all():
+            answers_list.append((answer.id, answer.answer_sequence_number, answer.value))
+        return answers_list
+
+
+    def get_survey(self):
+        # self.survey_name = survey_name
+        form_survey = {}
+        survey = Survey.objects.get(pk=self.survey_name)
+        for question in survey.questions.all():
+        # caso di domanda composta da gestire qua
+            answers_list = self.get_answers_list_for_question(question)
+            key = (question.__str__(), question.type.__str__())
+        # if "Single Choice" in question.type:
+            form_survey[key] = answers_list
+        return form_survey
+
+
+    def clean(self):
+        cleaned_data = super(FormSurveyCaregiver, self).clean()
+        id_caregiver = cleaned_data['caregiver']
+        date = cleaned_data['date']
+        survey = Survey.objects.get(pk=self.survey_name)
+        caregiver = Caregiver.objects.get(pk=id_caregiver)
+        caregiver_surveys = Caregiver_Survey_Question_Answer.objects.filter(caregiver=caregiver, survey=survey, date=date)
+#       checking for empty QuerySet, if not empty the survey has already been filled
+        if caregiver_surveys:
+            raise ValidationError(f"Il questionario {survey} è stato già compilato da {caregiver} in data {date}")
+
+        return cleaned_data
+
+
+    def get_caregiver_answers_from_form(self, request, caregiver, survey, date):
+        caregiver_answers = []
+        for question in survey.questions.all():
+            if question.type.__str__() == "Instructions in compound question":
+                continue
+            elif question.type.__str__() == "Single Choice":
+                id_answer = request.POST.get(question.__str__())
+                answer = Answer.objects.get(pk=id_answer)
+                caregiver_answer = Caregiver_Survey_Question_Answer(caregiver=caregiver, survey=survey, question=question, answer=answer, date=date)
+                caregiver_answers.append(caregiver_answer)
+            elif question.type.__str__() == "Multiple Choice":
+                ids_answers = request.POST.get(question.__str__())
+                for id_answer in ids_answers:
+                    answer = Answer.objects.get(pk=id_answer)
+                    caregiver_answer = Caregiver_Survey_Question_Answer(caregiver=caregiver, survey=survey, question=question, answer=answer, date=date)
+                    caregiver_answers.append(caregiver_answer)
+            elif question.type.__str__() == "Alphanumerical Input":
+                answer_value = request.POST.get(question.__str__())
+                Answer(question=question, value=answer_value).save()
+                answer = Answer.objects.get(question=question, value=answer_value)
+                caregiver_answer = Caregiver_Survey_Question_Answer(caregiver=caregiver, survey=survey, question=question, answer=answer, date=date)
+                caregiver_answers.append(caregiver_answer)
+            elif question.type.__str__() == "Range Input [0-10]":
+                # get the value of the answer, thanks to that and the question it is possible to retrieve the Answer from DB(necessary for caregiver_Survey_Question_Answer)
+                answer_value = request.POST.get(question.__str__())
+                answer = Answer.objects.get(question=question, value=answer_value)
+                caregiver_answer = Caregiver_Survey_Question_Answer(caregiver=caregiver, survey=survey, question=question, answer=answer, date=date)
+                caregiver_answers.append(caregiver_answer)
+        return caregiver_answers
+
+    def process(self, request):
+        caregiver_answers_list = []
+        date = self.cleaned_data['date']
+        id_caregiver = self.cleaned_data['caregiver']
+        caregiver = Caregiver.objects.get(pk=id_caregiver)
+        survey = Survey.objects.get(pk=self.survey_name)
+        caregiver_answers_list = self.get_caregiver_answers_from_form(request=request,caregiver=caregiver, survey=survey, date=date)
+    #patient_answers creates a transaction: either all answers are written or nothing, to prevent DB corruption in case of error
+        for caregiver_answers in caregiver_answers_list:
+            caregiver_answers.save()
     # def validate(self, request):
     #     """Check if the specified patient id exist."""
     #     super().validate(value)

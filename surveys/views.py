@@ -1,15 +1,19 @@
 from django.shortcuts import render, HttpResponse
 from django.views.generic.list import ListView
 
-from .form_survey import FormSurvey, FormExportSingleSurvey, FormExportPatientSurveys, FormExportSurveysSinglePerson, FormExportSurveys
+from .form_survey import FormSurveyPatient,FormSurveyCaregiver, FormExportSingleSurvey, FormExportPatientSurveys, FormExportSurveysSinglePerson, FormExportSurveys
 from .models import Patient, Caregiver, Answer, Survey,Patient_Survey_Question_Answer,Caregiver_Survey_Question_Answer, Question
 from .export_to_xls_module import export_to_xls_single_survey
 # Create your views here.
 
 
 def fillSurvey(request, survey_name):
+    survey = Survey.objects.get(pk=survey_name)
     if request.method == "POST":
-        form = FormSurvey(survey_name, request.POST)
+        if survey.patient_survey:
+            form = FormSurveyPatient(survey_name, request.POST)
+        else:
+            form = FormSurveyCaregiver(survey_name, request.POST)
 
         if form.is_valid():
             # try:
@@ -19,7 +23,10 @@ def fillSurvey(request, survey_name):
 
             return render(request, "surveys/survey_filling_success.html")
     else:
-        form = FormSurvey(survey_name)
+        if survey.patient_survey:
+            form = FormSurveyPatient(survey_name)
+        else:
+            form = FormSurveyCaregiver(survey_name)
 
     patients = Patient.objects.values_list("id_patient", "name", "surname")
     survey = form.get_survey()
@@ -122,7 +129,7 @@ def export_surveys_single_person_view(request):
         form = FormExportSurveysSinglePerson()
 
     context = {"form": form}
-    return render(request, "surveys/export_surveys_single_person_template.html", context)
+    return render(request, "surveys/export_surveys_template.html", context)
 
 
 def export_surveys_view(request):
