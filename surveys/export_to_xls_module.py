@@ -17,9 +17,11 @@ def export_to_xls_surveys(people_list, surveys_list, date_from, date_to):
     work_book = xlwt.Workbook(encoding='utf-8')
     # Setting initial row and column
 
-    surveys_one_type_one_person_list = []
+
+
 
     for survey in surveys_list:
+        surveys_one_type_one_person_list = []
         there_are_surveys = False
         for person in people_list:
             surveys_one_type_one_person = SurveysOneTypeOnePerson(person=person, date_from=date_from, date_to=date_to, survey=survey)

@@ -6,7 +6,7 @@ from .models import DiagnosisType, TransplantType, Patient, Caregiver, Survey, Q
 
 class CaregiverAdmin(admin.ModelAdmin):
     model = Caregiver
-    list_display = ['__str__', 'get_patient', ]
+    list_display = ['__str__', ]
 
     def get_patient(self, obj):
         return obj.patient.surname

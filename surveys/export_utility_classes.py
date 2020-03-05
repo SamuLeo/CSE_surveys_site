@@ -53,15 +53,12 @@ class SurveysOneTypeOnePerson():
     def __get_cleaned_surveys_list(self):
         surveys_list = []
         raw_filled_rows_one_person_one_type = self.__get_raw_filled_rows_one_person_one_type()
-        print(self.survey)
-        print(not raw_filled_rows_one_person_one_type)
         if not raw_filled_rows_one_person_one_type:
             return None
         # get list of surveys dates with list comprehension
         surveys_dates_list = []
         # surveys_dates_list = [row[0] for row in raw_filled_rows_one_person_one_type if row[0] not in surveys_dates_list]
         surveys_dates_list = set(row[0] for row in raw_filled_rows_one_person_one_type)
-        print(surveys_dates_list)
         for date in surveys_dates_list:
             # get survey rows tuple(question, answer) with list comprehension
             single_survey_raw_rows = [(row[1], row[2]) for row in raw_filled_rows_one_person_one_type if row[0] == date]
@@ -119,7 +116,11 @@ class SurveysOneTypeOnePerson():
             return False
 
     def __get_cleaned_person(self):
-        return (("Paziente", self.person.__str__()))
+        if self.survey.patient_survey:
+            return (("Paziente", self.person.__str__()))
+        else:
+            return (("Caregiver", self.person.__str__()))
+
 
 
 class SurveysOneType():

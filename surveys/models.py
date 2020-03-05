@@ -170,9 +170,9 @@ class Answer(models.Model):
 class Patient_Survey_Question_Answer(models.Model):
 
     patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="patient_answers")
-    survey = models.ForeignKey(Survey, on_delete=models.DO_NOTHING)
-    question = models.ForeignKey(Question, on_delete=models.DO_NOTHING)
-    answer = models.ForeignKey(Answer, on_delete=models.DO_NOTHING)
+    survey = models.ForeignKey(Survey, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    answer = models.ForeignKey(Answer, on_delete=models.CASCADE)
     date = models.DateField()
 
     def __str__(self):
@@ -190,9 +190,9 @@ class Patient_Survey_Question_Answer(models.Model):
 class Caregiver_Survey_Question_Answer(models.Model):
 
     caregiver = models.ForeignKey(Caregiver, on_delete=models.CASCADE, related_name="caregiver_answers")
-    survey = models.ForeignKey(Survey, on_delete=models.DO_NOTHING)
-    question = models.ForeignKey(Question, on_delete=models.DO_NOTHING)
-    answer = models.ForeignKey(Answer, on_delete=models.DO_NOTHING)
+    survey = models.ForeignKey(Survey, on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    answer = models.ForeignKey(Answer, on_delete=models.CASCADE)
     date = models.DateField()
 
     def __str__(self):

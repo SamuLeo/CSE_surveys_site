@@ -1,7 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from .models import Survey,Question,Answer,QuestionType,Patient, Patient_Survey_Question_Answer, Caregiver, Caregiver_Survey_Question_Answer
+from .models import GenderType, Survey,Question,Answer,QuestionType,Patient, Patient_Survey_Question_Answer, Caregiver, Caregiver_Survey_Question_Answer
 from .export_to_xls_module import export_to_xls_surveys
 
 
@@ -368,15 +368,12 @@ class FormExportSurveysPatients(forms.Form):
 
     def get_filtered_patients_list(self, patient_filter):
         patients_list = []
-        if patient_filter == 1:
-            for patient in Patient.objects.get(gender=GenderType.objects.get(pk="M")):
-                patients_list.append(patient)
-        elif patient_filter == 2:
-            for patient in Patient.objects.get(gender=GenderType.objects.get(pk="F")):
-                patients_list.append(patient)
+        if patient_filter == str(1):
+            patients_list = Patient.objects.filter(gender=GenderType.objects.get(pk="M"))
+        elif patient_filter == str(2):
+            patients_list = Patient.objects.filter(gender=GenderType.objects.get(pk="F"))
         else:
             patients_list = Patient.objects.all()
-
         return patients_list
 
 
@@ -414,7 +411,7 @@ class FormExportSurveysPatients(forms.Form):
 
     def process(self):
         # export_to_xls_patient_surveys expect a list, [] are necessary
-        patient_filter = cleaned_data['patient_filter']
+        patient_filter = self.cleaned_data['patient_filter']
         patients_list = self.get_filtered_patients_list(patient_filter=patient_filter)
         surveys_name = self.cleaned_data["surveys"]
         survey_list = []
@@ -479,15 +476,12 @@ class FormExportSurveysCaregivers(forms.Form):
 
     def get_filtered_caregivers_list(self, caregiver_filter):
         caregivers_list = []
-        if caregiver_filter == 1:
-            for caregiver in Caregiver.objects.get(gender=GenderType.objects.get(pk="M")):
-                caregivers_list.append(caregiver)
-        elif caregiver_filter == 2:
-            for caregiver in Caregiver.objects.get(gender=GenderType.objects.get(pk="F")):
-                caregivers_list.append(caregiver)
+        if caregiver_filter == str(1):
+            caregivers_list = Caregiver.objects.filter(gender=GenderType.objects.get(pk="M"))
+        elif caregiver_filter== str(2):
+            caregivers_list = Caregiver.objects.filter(gender=GenderType.objects.get(pk="F"))
         else:
             caregivers_list = Caregiver.objects.all()
-
         return caregivers_list
 
 
@@ -509,7 +503,7 @@ class FormExportSurveysCaregivers(forms.Form):
         for survey_name in surveys_name:
             survey = Survey.objects.get(pk=survey_name)
             for caregiver in caregivers_list:
-                caregiver_surveys = caregiver_Survey_Question_Answer.objects.filter(caregiver=caregiver, survey=survey)
+                caregiver_surveys = Caregiver_Survey_Question_Answer.objects.filter(caregiver=caregiver, survey=survey)
                 for caregiver_survey in caregiver_surveys:
                     if date_to is None:
                         if caregiver_survey.date == date_from:
@@ -525,7 +519,7 @@ class FormExportSurveysCaregivers(forms.Form):
 
     def process(self):
         # export_to_xls_caregiver_surveys expect a list, [] are necessary
-        caregiver_filter = cleaned_data['caregiver_filter']
+        caregiver_filter = self.cleaned_data['caregiver_filter']
         caregivers_list = self.get_filtered_caregivers_list(caregiver_filter=caregiver_filter)
         surveys_name = self.cleaned_data["surveys"]
         survey_list = []
