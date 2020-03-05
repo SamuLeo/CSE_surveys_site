@@ -1,7 +1,7 @@
 from django.shortcuts import render, HttpResponse
 from django.views.generic.list import ListView
 
-from .form_survey import FormSurveyPatient,FormSurveyCaregiver, FormExportSingleSurvey, FormExportPatientSurveys, FormExportSurveysSinglePerson, FormExportSurveys
+from .form_survey import FormExportSurveysSinglePatient,FormExportSurveysSingleCaregiver,FormSurveyCaregiver,FormSurveyPatient, FormExportSurveysCaregivers, FormExportSurveysPatients
 from .models import Patient, Caregiver, Answer, Survey,Patient_Survey_Question_Answer,Caregiver_Survey_Question_Answer, Question
 from .export_to_xls_module import export_to_xls_single_survey
 # Create your views here.
@@ -39,75 +39,20 @@ def export_survey_home(request):
     return render(request, "surveys/export_survey_home.html")
 
 
-def export_single_survey_view(request):
+def export_surveys_single_patient_view(request):
     if request.method == "POST":
         # id_patient = request.POST.get('id_patient')
         # patient = Patient.objects.get(pk=id_patient)
         # survey_name = request.POST.get('survey')
         # survey = Survey.objects.get(pk=survey_name)
         # date = request.POST.get('filling_date')
-        form = FormExportSingleSurvey(request.POST)
+        form = FormExportSurveysSinglePatient(request.POST)
 
         if form.is_valid():
-            id_patient = form.cleaned_data["patient"]
-            patient = Patient.objects.get(pk=id_patient)
-            survey_name = form.cleaned_data["survey"]
-            survey = Survey.objects.get(pk=survey_name)
-            date = form.cleaned_data["date"]
-            # if self.validate_form_export_single_survey_view(patient=patient, survey=survey, date=date):
-            return export_to_xls_single_survey(request=request, patient=patient, survey=survey, date=date)
-    else:
-        # patients = Patient.objects.values_list("id_patient", "name", "surname")
-        # surveys = Survey.objects.all()
-        # context = {"patients": patients, "surveys": surveys}
-        # return render(request, "surveys/export_single_survey.html", context)
-        form = FormExportSingleSurvey()
-
-    context = {"form": form}
-    return render(request, "surveys/export_single_survey.html", context)
-
-
-def export_patient_surveys_view(request):
-    if request.method == "POST":
-        # id_patient = request.POST.get('id_patient')
-        # patient = Patient.objects.get(pk=id_patient)
-        # survey_name = request.POST.get('survey')
-        # survey = Survey.objects.get(pk=survey_name)
-        # date = request.POST.get('filling_date')
-        form = FormExportPatientSurveys(request.POST)
-
-        if form.is_valid():
-            id_patient = form.cleaned_data["patient"]
-            patient = Patient.objects.get(pk=id_patient)
-            survey_name = form.cleaned_data["survey"]
-            survey = Survey.objects.get(pk=survey_name)
-            # if self.validate_form_export_single_survey_view(patient=patient, survey=survey, date=date):
-            return export_to_xls_patient_surveys(request=request, patient=patient, survey=survey)
-    else:
-        # patients = Patient.objects.values_list("id_patient", "name", "surname")
-        # surveys = Survey.objects.all()
-        # context = {"patients": patients, "surveys": surveys}
-        # return render(request, "surveys/export_single_survey.html", context)
-        form = FormExportPatientSurveys()
-
-    context = {"form": form}
-    return render(request, "surveys/export_patient_surveys.html", context)
-
-
-def export_surveys_single_person_view(request):
-    if request.method == "POST":
-        # id_patient = request.POST.get('id_patient')
-        # patient = Patient.objects.get(pk=id_patient)
-        # survey_name = request.POST.get('survey')
-        # survey = Survey.objects.get(pk=survey_name)
-        # date = request.POST.get('filling_date')
-        form = FormExportSurveysSinglePerson(request.POST)
-
-        if form.is_valid():
-            try:
-                return form.process()
-            except:
-                return render(request, "surveys/export_error.html")
+            # try:
+            return form.process()
+            # except:
+            #     return render(request, "surveys/export_error.html")
 
             # print(form.cleaned_data["patient"])
             # id_patient = form.cleaned_data["patient"]
@@ -126,15 +71,54 @@ def export_surveys_single_person_view(request):
         # surveys = Survey.objects.all()
         # context = {"patients": patients, "surveys": surveys}
         # return render(request, "surveys/export_single_survey.html", context)
-        form = FormExportSurveysSinglePerson()
+        form = FormExportSurveysSinglePatient()
 
     context = {"form": form}
     return render(request, "surveys/export_surveys_template.html", context)
 
 
-def export_surveys_view(request):
+def export_surveys_single_caregiver_view(request):
     if request.method == "POST":
-        form = FormExportSurveys(request.POST)
+        # id_patient = request.POST.get('id_patient')
+        # patient = Patient.objects.get(pk=id_patient)
+        # survey_name = request.POST.get('survey')
+        # survey = Survey.objects.get(pk=survey_name)
+        # date = request.POST.get('filling_date')
+        form = FormExportSurveysSingleCaregiver(request.POST)
+
+        if form.is_valid():
+            # try:
+            return form.process()
+            # except:
+            #     return render(request, "surveys/export_error.html")
+
+            # print(form.cleaned_data["patient"])
+            # id_patient = form.cleaned_data["patient"]
+            # patient = Patient.objects.get(pk=id_patient)
+            # surveys_name = form.cleaned_data["surveys"]
+            # surveys = []
+            # for survey_name in surveys_name:
+            #     surveys.append(Survey.objects.get(pk=surveys_name))
+            # date_from = form.cleaned_data["date_from"]
+            # if form.cleaned_data["date_to"]:
+            #     date_to = form.cleaned_data["date_to"]
+            # # if self.validate_form_export_single_survey_view(patient=patient, survey=survey, date=date):
+            # return export_to_xls_patient_surveys(request=request, patient=patient, survey=survey,  date_from=date_from, date_to=date_to)
+    else:
+        # patients = Patient.objects.values_list("id_patient", "name", "surname")
+        # surveys = Survey.objects.all()
+        # context = {"patients": patients, "surveys": surveys}
+        # return render(request, "surveys/export_single_survey.html", context)
+        form = FormExportSurveysSingleCaregiver()
+
+    context = {"form": form}
+    return render(request, "surveys/export_surveys_template.html", context)
+
+
+
+def export_surveys_patients_view(request):
+    if request.method == "POST":
+        form = FormExportSurveysPatients(request.POST)
 
         if form.is_valid():
             # try:
@@ -142,7 +126,23 @@ def export_surveys_view(request):
             # except:
                 # return render(request, "surveys/export_error.html")
     else:
-        form = FormExportSurveys()
+        form = FormExportSurveysPatients()
+
+    context = {"form": form}
+    return render(request, "surveys/export_surveys_template.html", context)
+
+
+def export_surveys_caregivers_view(request):
+    if request.method == "POST":
+        form = FormExportSurveysCaregivers(request.POST)
+
+        if form.is_valid():
+            # try:
+            return form.process()
+            # except:
+                # return render(request, "surveys/export_error.html")
+    else:
+        form = FormExportSurveysCaregivers()
 
     context = {"form": form}
     return render(request, "surveys/export_surveys_template.html", context)

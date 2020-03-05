@@ -1,6 +1,6 @@
 import xlwt
 
-from .models import Patient_Survey_Question_Answer, Caregiver_Survey_Question_Answer
+from .models import Patient_Survey_Question_Answer, Caregiver_Survey_Question_Answer, Patient, Caregiver, Answer, Survey, Question
 
 class SingleSurvey():
     def __init__(self, date, raw_filled_survey_rows):
@@ -29,22 +29,21 @@ class SingleSurvey():
 class SurveysOneTypeOnePerson():
     def __init__(self, person, date_from, date_to, survey):
         self.person = person
-        self.single_survey_list = single_survey_list
         self.date_from = date_from
         if date_to:
             self.date_to = date_to
         self.survey = survey
 
     def __get_raw_filled_rows_one_person_one_type(self):
-        if survey.patient_survey:
-            if date_to:
+        if self.survey.patient_survey:
+            if self.date_to:
                 return Patient_Survey_Question_Answer.objects.filter(patient=self.person, date__gte=self.date_from,
                                 date__lte=self.date_to,survey=self.survey).values_list('date','question','answer',)
             else:
                 return Patient_Survey_Question_Answer.objects.filter(patient=self.person, date=self.date_from,
                                 survey=self.survey).values_list('date','question','answer', )
         else:
-            if date_to:
+            if self.date_to:
                 return Caregiver_Survey_Question_Answer.objects.filter(caregiver=self.person,date__gte=self.date_from,
                                 date__lte=self.date_to, survey=self.survey).values_list('date','question','answer',)
             else:
@@ -54,26 +53,33 @@ class SurveysOneTypeOnePerson():
     def __get_cleaned_surveys_list(self):
         surveys_list = []
         raw_filled_rows_one_person_one_type = self.__get_raw_filled_rows_one_person_one_type()
+        print(self.survey)
+        print(not raw_filled_rows_one_person_one_type)
+        if not raw_filled_rows_one_person_one_type:
+            return None
         # get list of surveys dates with list comprehension
-        surveys_dates_list = [row[0] : for row in raw_filled_rows_one_person_one_type if raw_filled_rows_one_person_one_type[0] not in surveys_dates_list]
-
+        surveys_dates_list = []
+        # surveys_dates_list = [row[0] for row in raw_filled_rows_one_person_one_type if row[0] not in surveys_dates_list]
+        surveys_dates_list = set(row[0] for row in raw_filled_rows_one_person_one_type)
+        print(surveys_dates_list)
         for date in surveys_dates_list:
             # get survey rows tuple(question, answer) with list comprehension
-            single_survey_raw_rows = [(row[1], row[2]) : for row in raw_filled_rows_one_person_one_type if raw_filled_rows_one_person_one_type[0] == date]
+            single_survey_raw_rows = [(row[1], row[2]) for row in raw_filled_rows_one_person_one_type if row[0] == date]
             single_survey = SingleSurvey(date=date, raw_filled_survey_rows=single_survey_raw_rows).get_cleaned_survey()
             surveys_list.append(single_survey)
 
         return surveys_list
-
-    def __get_cleaned_person(self):
-        return (("Paziente", self.person.__str__())
 
 
     def write_surveys_on_excel_sheet(self, work_sheet, initial_row, initial_column):
         head = self.__get_cleaned_person()
         surveys_list = self.__get_cleaned_surveys_list()
 
+        if not surveys_list:
+            return 0
+
         row_num = initial_row
+        col_growth = len(head)
 
         font_style = xlwt.XFStyle()
         font_style.font.bold = True
@@ -89,20 +95,31 @@ class SurveysOneTypeOnePerson():
             font_style.font.bold = True
             for header_element in header:
                 for col_num in range(len(header_element)):
-                    work_sheet.write(row_num, col_num + initial_col_num, header_element[col_num], font_style)
+                    work_sheet.write(row_num, col_num + initial_column, header_element[col_num], font_style)
                 row_num += 1
+                col_growth = max(col_growth, len(header))
+
 
             # Sheet body, remaining rows
             font_style = xlwt.XFStyle()
 
             for row in survey_content:
                 for col_num in range(len(row)):
-                    work_sheet.write(row_num, col_num + initial_col_num, row[col_num], font_style)
+                    work_sheet.write(row_num, col_num + initial_column, row[col_num], font_style)
                 row_num += 1
+                col_growth = max(col_growth, len(row))
 
-        col_growth = max(len(head), len(header), len(row))
-        col_num = initial_col_num + col_growth
+        col_num = initial_column + col_growth
         return col_num
+
+    def has_surveys(self):
+        if self.__get_cleaned_surveys_list() is not None:
+            return True
+        else:
+            return False
+
+    def __get_cleaned_person(self):
+        return (("Paziente", self.person.__str__()))
 
 
 class SurveysOneType():

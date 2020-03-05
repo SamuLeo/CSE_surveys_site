@@ -2,8 +2,36 @@ import xlwt, re
 
 from django.shortcuts import render, HttpResponse
 from .models import Patient, Caregiver, Answer, Survey,Patient_Survey_Question_Answer,Caregiver_Survey_Question_Answer, Question
-from .export_utility_classes import SurveysOneType
+from .export_utility_classes import SurveysOneType, SurveysOneTypeOnePerson
 
+
+
+def export_to_xls_surveys(people_list, surveys_list, date_from, date_to):
+
+    response = HttpResponse(content_type='application/ms-excel')
+    if len(people_list) == 1:
+        response['Content-Disposition'] = f"attachment; filename=questionari_{people_list[0]}.xls"
+    else:
+        response['Content-Disposition'] = f"attachment; filename=questionari.xls"
+
+    work_book = xlwt.Workbook(encoding='utf-8')
+    # Setting initial row and column
+
+    surveys_one_type_one_person_list = []
+
+    for survey in surveys_list:
+        there_are_surveys = False
+        for person in people_list:
+            surveys_one_type_one_person = SurveysOneTypeOnePerson(person=person, date_from=date_from, date_to=date_to, survey=survey)
+            if surveys_one_type_one_person.has_surveys():
+                there_are_surveys = True
+                surveys_one_type_one_person_list.append(surveys_one_type_one_person)
+        if there_are_surveys:
+            work_sheet = work_book.add_sheet(get_valid_work_sheet_name(survey=survey))
+            SurveysOneType(surveys_one_type_one_person_list=surveys_one_type_one_person_list).write_surveys_on_excel_sheet(work_sheet=work_sheet)
+
+    work_book.save(response)
+    return response
 
 # def export_to_xls_single_survey(request, patient, survey, date):
 #
@@ -146,17 +174,15 @@ def write_surveys_of_patient_on_work_sheet(work_sheet, row_num, initial_col_num,
     col_num = initial_col_num + col_growth
     return (row_num, col_num)
 
-def get_valid_work_sheet_name(survey_name):
+def get_valid_work_sheet_name(survey):
     """This function return a valid name for the Excel work sheet associated to the survey"""
-
-    survey = Survey.objects.get(pk=survey_name)
 
     if survey.short_name is not None:
         pattern = re.compile(r'[\\/\*\?:\[\] -]')
         work_sheet_name = pattern.sub("_", survey.short_name)[:31]
     else:
         pattern = re.compile(r'[\\/\*\?:\[\] -]')
-        work_sheet_name = pattern.sub("_", survey_name)[:31]
+        work_sheet_name = pattern.sub("_", survey.name)[:31]
 
     return work_sheet_name
 
@@ -201,22 +227,20 @@ def export_to_xls_patient_surveys(patient, surveys_list, date_from, date_to):
 
 
 
-def export_to_xls_surveys(patients_list, surveys_list, date_from, date_to):
 
-    response = HttpResponse(content_type='application/ms-excel')
-    if len(patients_list) == 1:
-        response['Content-Disposition'] = f"attachment; filename=questionari_{patient}.xls"
-    else:
-        response['Content-Disposition'] = f"attachment; filename=questionari.xls"
 
-    work_book = xlwt.Workbook(encoding='utf-8')
-    # Setting initial row and column
 
-    for survey in survey_list:
-        
 
-    work_book.save(response)
-    return response
+
+
+
+
+
+
+
+
+
+
 
 
 

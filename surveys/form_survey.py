@@ -2,7 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 
 from .models import Survey,Question,Answer,QuestionType,Patient, Patient_Survey_Question_Answer, Caregiver, Caregiver_Survey_Question_Answer
-from .export_to_xls_module import export_to_xls_patient_surveys
+from .export_to_xls_module import export_to_xls_surveys
 
 
 class FormExportSingleSurvey(forms.Form):
@@ -96,12 +96,13 @@ class FormExportPatientSurveys(forms.Form):
 
 
 
-class FormExportSurveysSinglePerson(forms.Form):
+class FormExportSurveysSinglePatient(forms.Form):
 
     def get_surveys_names():
         surveys_names_list = []
-        for survey_name in Survey.objects.all():
-            surveys_names_list.append((survey_name,survey_name))
+        for survey in Survey.objects.all():
+            if survey.patient_survey:
+                surveys_names_list.append((survey.__str__(),survey.__str__()))
         return surveys_names_list
 
     def get_patients():
@@ -114,7 +115,7 @@ class FormExportSurveysSinglePerson(forms.Form):
 
     patient = forms.ChoiceField(
                         choices = get_patients(),
-                        label="Numero Identificativo del Paziente:",
+                        label="Paziente:",
                         widget = forms.Select(attrs=  {"class": "form-control  col-4",
                                     "name":"patient",
                                     "id":"patient"}),
@@ -143,10 +144,14 @@ class FormExportSurveysSinglePerson(forms.Form):
                         required=False)
 
     def clean(self):
-        cleaned_data = super(FormExportSurveysSinglePerson, self).clean()
-        surveys_name = cleaned_data['surveys']
-        date_from = cleaned_data['date_from']
-        date_to = cleaned_data['date_to']
+        cleaned_data = super(FormExportSurveysSinglePatient, self).clean()
+        surveys_name = cleaned_data.get('surveys')
+        if surveys_name is None:
+            raise ValidationError("Selezionare i questionari da esportare")
+        date_from = cleaned_data.get('date_from')
+        if date_from is None:
+            raise ValidationError("Selezionare la data")
+        date_to = cleaned_data.get('date_to')
         id_patient = cleaned_data['patient']
         patient = Patient.objects.get(pk=id_patient)
 
@@ -171,7 +176,7 @@ class FormExportSurveysSinglePerson(forms.Form):
 
     def process(self):
         id_patient = self.cleaned_data["patient"]
-        patient = Patient.objects.get(pk=id_patient)
+        patient = [Patient.objects.get(pk=id_patient)]
         surveys_name = self.cleaned_data["surveys"]
         survey_list = []
         for survey_name in surveys_name:
@@ -179,7 +184,7 @@ class FormExportSurveysSinglePerson(forms.Form):
         date_from = self.cleaned_data["date_from"]
         # if self.cleaned_data["date_to"]:
         date_to = self.cleaned_data["date_to"]
-        return export_to_xls_patient_surveys(patient=patient, surveys_list=survey_list,  date_from=date_from, date_to=date_to)
+        return export_to_xls_surveys(people_list=patient, surveys_list=survey_list,  date_from=date_from, date_to=date_to)
         # else:
             # return export_to_xls_patient_surveys(patient=patient, surveys_list=survey_list,  date_from=date_from)
         # if self.validate_form_export_single_survey_view(patient=patient, survey=survey, date=date):
@@ -214,12 +219,109 @@ class FormExportSurveysSinglePerson(forms.Form):
 
 
 
-class FormExportSurveys(forms.Form):
+
+class FormExportSurveysSingleCaregiver(forms.Form):
 
     def get_surveys_names():
         surveys_names_list = []
-        for survey_name in Survey.objects.all():
-            surveys_names_list.append((survey_name,survey_name))
+        for survey in Survey.objects.all():
+            if not survey.patient_survey:
+                surveys_names_list.append((survey.__str__(),survey.__str__()))
+        return surveys_names_list
+
+    def get_caregivers():
+        caregivers_list = []
+        for caregiver in Caregiver.objects.all():
+            caregivers_list.append((caregiver.id, caregiver.__str__()))
+        return caregivers_list
+
+
+
+    caregiver = forms.ChoiceField(
+                        choices = get_caregivers(),
+                        label="Caregiver:",
+                        widget = forms.Select(attrs=  {"class": "form-control  col-5",
+                                    "name":"caregiver",
+                                    "id":"caregiver"}),
+                        required=True)
+
+    surveys = forms.MultipleChoiceField(
+                        choices = get_surveys_names(),
+                        label = "Nomi dei questionari da esportare:",
+                        widget = forms.CheckboxSelectMultiple(attrs = {"multiple class": "form-control col-5",
+                                                                    "id": "surveys",
+                                                                    "name":"surveys",}),
+                        required=True)
+
+    date_from = forms.DateField(
+                        label = "Dalla Data:",
+                        widget = forms.widgets.DateInput(attrs={"class": "form-control col-5",
+                                                            "type": "date",
+                                                            }),
+                        required=True)
+
+    date_to = forms.DateField(
+                        label = "Alla Data: (Lasciare vuoto in caso si è interessati ad una data singola)",
+                        widget = forms.widgets.DateInput(attrs={"class": "form-control col-5",
+                                                            "type": "date",
+                                                            }),
+                        required=False)
+
+    def clean(self):
+        cleaned_data = super(FormExportSurveysSingleCaregiver, self).clean()
+        surveys_name = cleaned_data.get('surveys')
+        if surveys_name is None:
+            raise ValidationError("Selezionare i questionari da esportare")
+        date_from = cleaned_data.get('date_from')
+        if date_from is None:
+            raise ValidationError("Selezionare la data")
+        date_to = cleaned_data.get('date_to')
+        id_caregiver = cleaned_data.get('caregiver')
+        caregiver = Caregiver.objects.get(pk=id_caregiver)
+
+        if date_to is not None and date_from > date_to:
+            raise ValidationError("Specificare un range di date valido")
+
+        for survey_name in surveys_name:
+            survey = Survey.objects.get(pk=survey_name)
+            caregiver_surveys = Caregiver_Survey_Question_Answer.objects.filter(caregiver=caregiver, survey=survey)
+            for caregiver_survey in caregiver_surveys:
+                if date_to is None:
+                    if caregiver_survey.date == date_from:
+                        return cleaned_data
+                elif caregiver_survey.date > date_from and caregiver_survey.date < date_to:
+                    return cleaned_data
+# if the code arrive here the survey is not in the DB
+        if date_to is None:
+            raise ValidationError(f"Non sono stati compilati questionari da {caregiver} in data {date_from}")
+        else:
+            raise ValidationError(f"Non sono stati compilati questionari da {caregiver} dalla data {date_from} alla data {date_to}")
+
+
+    def process(self):
+        id_caregiver = self.cleaned_data["caregiver"]
+        caregiver = [Caregiver.objects.get(pk=id_caregiver)]
+        surveys_name = self.cleaned_data["surveys"]
+        survey_list = []
+        for survey_name in surveys_name:
+            survey_list.append(Survey.objects.get(pk=survey_name))
+        date_from = self.cleaned_data["date_from"]
+        # if self.cleaned_data["date_to"]:
+        date_to = self.cleaned_data["date_to"]
+        return export_to_xls_surveys(people_list=caregiver, surveys_list=survey_list,  date_from=date_from, date_to=date_to)
+
+
+
+
+
+
+class FormExportSurveysPatients(forms.Form):
+
+    def get_surveys_names():
+        surveys_names_list = []
+        for survey in Survey.objects.all():
+            if survey.patient_survey:
+                surveys_names_list.append((survey.__str__(),survey.__str__()))
         return surveys_names_list
 
     def get_patients():
@@ -232,7 +334,7 @@ class FormExportSurveys(forms.Form):
 
     patient_filter = forms.ChoiceField(
                                 choices=[(1,"Solo Maschi"), (2,"Solo Femmine"), (3,"Tutti")],
-                                label="Gruppo di persone di cui si vuole fare l'esportazione:",
+                                label="Gruppo di pazienti di cui si vuole fare l'esportazione:",
                                 widget=forms.RadioSelect(attrs={
                                                             "class": "form-check-input pb-5",
                                                             "type": "radio",
@@ -279,13 +381,14 @@ class FormExportSurveys(forms.Form):
 
 
     def clean(self):
-        cleaned_data = super(FormExportSurveys, self).clean()
-
-        if not cleaned_data['surveys']:
+        cleaned_data = super(FormExportSurveysPatients, self).clean()
+        surveys_name = cleaned_data.get('surveys')
+        if surveys_name is None:
             raise ValidationError("Selezionare i questionari da esportare")
-        surveys_name = cleaned_data['surveys']
-        date_from = cleaned_data['date_from']
-        date_to = cleaned_data['date_to']
+        date_from = cleaned_data.get('date_from')
+        if date_from is None:
+            raise ValidationError("Selezionare la data")
+        date_to = cleaned_data.get('date_to')
         patient_filter = cleaned_data['patient_filter']
         patients_list = self.get_filtered_patients_list(patient_filter=patient_filter)
 
@@ -310,7 +413,6 @@ class FormExportSurveys(forms.Form):
 
 
     def process(self):
-        id_patient = self.cleaned_data["patient"]
         # export_to_xls_patient_surveys expect a list, [] are necessary
         patient_filter = cleaned_data['patient_filter']
         patients_list = self.get_filtered_patients_list(patient_filter=patient_filter)
@@ -321,9 +423,118 @@ class FormExportSurveys(forms.Form):
         date_from = self.cleaned_data["date_from"]
         # if self.cleaned_data["date_to"]:
         date_to = self.cleaned_data["date_to"]
-        return export_to_xls_surveys(patients_list=patients_list, surveys_list=survey_list,  date_from=date_from, date_to=date_to)
+        return export_to_xls_surveys(people_list=patients_list, surveys_list=survey_list,  date_from=date_from, date_to=date_to)
 
 
+class FormExportSurveysCaregivers(forms.Form):
+
+    def get_surveys_names():
+        surveys_names_list = []
+        for survey in Survey.objects.all():
+            if not survey.patient_survey:
+                surveys_names_list.append((survey.__str__(),survey.__str__()))
+        return surveys_names_list
+
+    def get_caregivers():
+        caregivers_list = []
+        for caregiver in Caregiver.objects.all():
+            caregivers_list.append((caregiver.id_caregiver, caregiver.__str__()))
+        return caregivers_list
+
+
+
+    caregiver_filter = forms.ChoiceField(
+                                choices=[(1,"Solo Maschi"), (2,"Solo Femmine"), (3,"Tutti")],
+                                label="Gruppo di caregivers di cui si vuole fare l'esportazione:",
+                                widget=forms.RadioSelect(attrs={
+                                                            "class": "form-check-input pb-5",
+                                                            "type": "radio",
+                                                            "required": "true"}),
+                                required=True)
+
+    surveys = forms.MultipleChoiceField(
+                        choices = get_surveys_names(),
+                        label = "Nomi dei questionari da esportare:",
+                        widget = forms.CheckboxSelectMultiple(attrs = {"multiple class": "form-control col-4",
+                                                                    "id": "surveys",
+                                                                    "name":"surveys",
+                                                                    "required": "true",}),
+                        required=True)
+
+    date_from = forms.DateField(
+                        label = "Dalla Data:",
+                        widget = forms.widgets.DateInput(attrs={"class": "form-control col-4",
+                                                            "type": "date",
+                                                            "required": "true"
+                                                            }),
+                        required=True)
+
+    date_to = forms.DateField(
+                        label = "Alla Data: (Lasciare vuoto in caso si è interessati ad una data singola)",
+                        widget = forms.widgets.DateInput(attrs={"class": "form-control col-4",
+                                                            "type": "date",
+                                                            }),
+                        required=False)
+
+
+    def get_filtered_caregivers_list(self, caregiver_filter):
+        caregivers_list = []
+        if caregiver_filter == 1:
+            for caregiver in Caregiver.objects.get(gender=GenderType.objects.get(pk="M")):
+                caregivers_list.append(caregiver)
+        elif caregiver_filter == 2:
+            for caregiver in Caregiver.objects.get(gender=GenderType.objects.get(pk="F")):
+                caregivers_list.append(caregiver)
+        else:
+            caregivers_list = Caregiver.objects.all()
+
+        return caregivers_list
+
+
+    def clean(self):
+        cleaned_data = super(FormExportSurveysCaregivers, self).clean()
+        surveys_name = cleaned_data.get('surveys')
+        if surveys_name is None:
+            raise ValidationError("Selezionare i questionari da esportare")
+        date_from = cleaned_data.get('date_from')
+        if date_from is None:
+            raise ValidationError("Selezionare la data")
+        date_to = cleaned_data.get('date_to')
+        caregiver_filter = cleaned_data['caregiver_filter']
+        caregivers_list = self.get_filtered_caregivers_list(caregiver_filter=caregiver_filter)
+
+        if date_to is not None and date_from > date_to:
+            raise ValidationError("Specificare un range di date valido")
+
+        for survey_name in surveys_name:
+            survey = Survey.objects.get(pk=survey_name)
+            for caregiver in caregivers_list:
+                caregiver_surveys = caregiver_Survey_Question_Answer.objects.filter(caregiver=caregiver, survey=survey)
+                for caregiver_survey in caregiver_surveys:
+                    if date_to is None:
+                        if caregiver_survey.date == date_from:
+                            return cleaned_data
+                    elif caregiver_survey.date > date_from and caregiver_survey.date < date_to:
+                        return cleaned_data
+# if the code arrive here the survey is not in the DB
+        if date_to is None:
+            raise ValidationError(f"Non sono stati compilati questionari da {caregiver} in data {date_from}")
+        else:
+            raise ValidationError(f"Non sono stati compilati questionari da {caregiver} dalla data {date_from} alla data {date_to}")
+
+
+    def process(self):
+        # export_to_xls_caregiver_surveys expect a list, [] are necessary
+        caregiver_filter = cleaned_data['caregiver_filter']
+        caregivers_list = self.get_filtered_caregivers_list(caregiver_filter=caregiver_filter)
+        surveys_name = self.cleaned_data["surveys"]
+        survey_list = []
+        for survey_name in surveys_name:
+            survey_list.append(Survey.objects.get(pk=survey_name))
+        date_from = self.cleaned_data["date_from"]
+        # if self.cleaned_data["date_to"]:
+        date_to = self.cleaned_data["date_to"]
+        return export_to_xls_surveys(people_list=caregivers_list, surveys_list=survey_list,  date_from=date_from, date_to=date_to)
 
 
 

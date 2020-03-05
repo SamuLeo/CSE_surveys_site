@@ -5,13 +5,15 @@
 {% block content %}
     <div class="container pb-5">
         <h1><strong>Home Esportazione Questionari</strong></h1>
-        <hr>
         <br>
         <h3>Tipi di esportazione:</h3>
+        <br>
+        <h4><a href="{% url 'export_surveys_single_patient' %}">Singoli Pazienti</a></h4>
         <hr>
-        <br>
-        <h4><a href="{% url 'export_surveys_single_person' %}">Singole Persone</a></h4>
-        <br>
-        <h4><a href="{% url 'export_surveys' %}">Gruppi di Persone</a></h4>
+        <h4><a href="{% url 'export_surveys_single_caregiver' %}">Singoli Caregivers</a></h4>
+        <hr>
+        <h4><a href="{% url 'export_patients_surveys' %}">Pazienti</a></h4>
+        <hr>
+        <h4><a href="{% url 'export_caregivers_surveys' %}">Caregivers</a></h4>
     </div>
 {% endblock content %}
