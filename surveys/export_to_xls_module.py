@@ -2,7 +2,7 @@ import xlwt, re
 
 from django.shortcuts import render, HttpResponse
 from .models import Patient, Caregiver, Answer, Survey,Patient_Survey_Question_Answer,Caregiver_Survey_Question_Answer, Question
-
+from .export_utility_classes import SurveysOneType
 
 
 # def export_to_xls_single_survey(request, patient, survey, date):
@@ -211,20 +211,9 @@ def export_to_xls_surveys(patients_list, surveys_list, date_from, date_to):
 
     work_book = xlwt.Workbook(encoding='utf-8')
     # Setting initial row and column
-    initial_coordinates = (0,0)
 
-    surveys_dict = {}
-
-    for patient in patients_list:
-        # surveys_dict is composed by the __str__() of a survey as key and the list of the survey of that type as value of the patient,
-        # already formatted to be written in a Excel sheet
-        surveys_dict = get_surveys_of_patient(surveys_dict=surveys_dict, patient=patient, surveys_list=surveys_list, date_from=date_from, date_to=date_to)
-
-        for survey_name in surveys_dict:
-            work_sheet = work_book.add_sheet(get_valid_work_sheet_name(survey_name=survey_name))
-
-            surveys_of_one_type_list = surveys_dict[survey_name]
-            initial_coordinates = write_surveys_of_patient_on_work_sheet(work_sheet=work_sheet, row_num=initial_coordinates[0], initial_col_num=initial_coordinates[1], patient=patient, surveys_list=surveys_of_one_type_list)
+    for survey in survey_list:
+        
 
     work_book.save(response)
     return response
