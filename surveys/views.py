@@ -16,10 +16,10 @@ def fillSurvey(request, survey_name):
             form = FormSurveyCaregiver(survey_name, request.POST)
 
         if form.is_valid():
-            # try:
-            form.process(request)
-            # except:
-            #     return render(request, "surveys/survey_filling_error.html")
+            try:
+                form.process(request)
+            except:
+                return render(request, "surveys/survey_filling_error.html")
 
             return render(request, "surveys/survey_filling_success.html")
     else:
@@ -49,10 +49,10 @@ def export_surveys_single_patient_view(request):
         form = FormExportSurveysSinglePatient(request.POST)
 
         if form.is_valid():
-            # try:
-            return form.process()
-            # except:
-            #     return render(request, "surveys/export_error.html")
+            try:
+                return form.process()
+            except:
+                return render(request, "surveys/export_error.html")
 
             # print(form.cleaned_data["patient"])
             # id_patient = form.cleaned_data["patient"]
