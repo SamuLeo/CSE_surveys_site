@@ -1,6 +1,6 @@
 import xlwt
 
-from .models import Patient_Survey_Question_Answer, Caregiver_Survey_Question_Answer, Patient, Caregiver, Answer, Survey, Question
+from .models import QuestionType, Patient_Survey_Question_Answer, Caregiver_Survey_Question_Answer, Patient, Caregiver, Answer, Survey, Question
 
 class SingleSurvey():
     def __init__(self, date, raw_filled_survey_rows):
@@ -32,6 +32,8 @@ class SurveysOneTypeOnePerson():
         self.date_from = date_from
         if date_to:
             self.date_to = date_to
+        else:
+            self.date_to = None
         self.survey = survey
 
     def __get_raw_filled_rows_one_person_one_type(self):
@@ -50,6 +52,7 @@ class SurveysOneTypeOnePerson():
                 return Caregiver_Survey_Question_Answer.objects.filter(caregiver=self.person, date=self.date_from,
                                 survey=self.survey).values_list('date','question', 'answer',)
 
+
     def __get_cleaned_surveys_list(self):
         surveys_list = []
         raw_filled_rows_one_person_one_type = self.__get_raw_filled_rows_one_person_one_type()
@@ -62,6 +65,7 @@ class SurveysOneTypeOnePerson():
         for date in surveys_dates_list:
             # get survey rows tuple(question, answer) with list comprehension
             single_survey_raw_rows = [(row[1], row[2]) for row in raw_filled_rows_one_person_one_type if row[0] == date]
+
             single_survey = SingleSurvey(date=date, raw_filled_survey_rows=single_survey_raw_rows).get_cleaned_survey()
             surveys_list.append(single_survey)
 
@@ -120,7 +124,6 @@ class SurveysOneTypeOnePerson():
             return (("Paziente", self.person.__str__()))
         else:
             return (("Caregiver", self.person.__str__()))
-
 
 
 class SurveysOneType():

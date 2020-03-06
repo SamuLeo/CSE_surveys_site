@@ -29,20 +29,31 @@
                                      id="{{question.0}}{{answer_sequence_number}}"
                                      value="{{answer_id}}"
                                      required>
-                                    <label class="form-check-label" for={{question.0}}{{answer_sequence_number}}>{{answer_sequence_number}} - {{answer_content}}</label>
+                                    <label class="form-check-label" for={{question.0}}{{answer_sequence_number}}>
+                                        {% if answer_sequence_number %}
+                                            {{answer_sequence_number}} - {{answer_content}}
+                                        {% else %}
+                                            {{answer_content}}
+                                        {% endif %}
+                                    </label>
                                 </div>
                                 <!-- <hr> -->
                             {% endfor %}
                         {% elif question.1 == "Multiple Choice" %}
                             {% for answer_id, answer_sequence_number, answer_content in answers %}
                                 <div class="form-check ">
-                                    <input class="form-check-input"
-                                     type="checkbox"
-                                     name="{{question.0}}"
-                                     id="{{question.0}}{{answer_sequence_number}}"
-                                     value="{{answer_id}}"
-                                     required>
-                                    <label class="form-check-label" for={{question.0}}{{answer_sequence_number}}>{{answer_sequence_number}} - {{answer_content}}</label>
+                                        <input class="form-check-input"
+                                        type="checkbox"
+                                        name="{{question.0}}"
+                                        id="{{question.0}}{{answer_sequence_number}}"
+                                        value="{{answer_id}}">
+                                        <label class="form-check-label" for={{question.0}}{{answer_sequence_number}}>
+                                            {% if answer_sequence_number %}
+                                                {{answer_sequence_number}} - {{answer_content}}
+                                            {% else %}
+                                                {{answer_content}}
+                                            {% endif %}
+                                        </label>
                                 </div>
                             {% endfor %}
                         {% elif question.1 == "Alphanumerical Input" %}

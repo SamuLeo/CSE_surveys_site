@@ -404,9 +404,9 @@ class FormExportSurveysPatients(forms.Form):
                         return cleaned_data
 # if the code arrive here the survey is not in the DB
         if date_to is None:
-            raise ValidationError(f"Non sono stati compilati questionari dal paziente {patient} in data {date_from}")
+            raise ValidationError(f"Non sono stati compilati questionari da pazienti del gruppo richiesto in data {date_from}")
         else:
-            raise ValidationError(f"Non sono stati compilati questionari dal paziente {patient} dalla data {date_from} alla data {date_to}")
+            raise ValidationError(f"Non sono stati compilati questionari da pazienti del gruppo richiesto dalla data {date_from} alla data {date_to}")
 
 
     def process(self):
@@ -512,9 +512,9 @@ class FormExportSurveysCaregivers(forms.Form):
                         return cleaned_data
 # if the code arrive here the survey is not in the DB
         if date_to is None:
-            raise ValidationError(f"Non sono stati compilati questionari da {caregiver} in data {date_from}")
+            raise ValidationError(f"Non sono stati compilati questionari da alcun caregiver del gruppo richiesto in data {date_from}")
         else:
-            raise ValidationError(f"Non sono stati compilati questionari da {caregiver} dalla data {date_from} alla data {date_to}")
+            raise ValidationError(f"Non sono stati compilati questionari da alcun caregiver del gruppo richiesto dalla data {date_from} alla data {date_to}")
 
 
     def process(self):
@@ -598,6 +598,7 @@ class FormSurveyPatient(forms.Form):
 
 
     def get_patient_answers_from_form(self, request, patient, survey, date):
+        print(request.POST)
         patient_answers = []
         for question in survey.questions.all():
             if question.type.__str__() == "Instructions in compound question":
@@ -608,14 +609,23 @@ class FormSurveyPatient(forms.Form):
                 patient_answer = Patient_Survey_Question_Answer(patient=patient, survey=survey, question=question, answer=answer, date=date)
                 patient_answers.append(patient_answer)
             elif question.type.__str__() == "Multiple Choice":
-                ids_answers = request.POST.get(question.__str__())
-                for id_answer in ids_answers:
-                    answer = Answer.objects.get(pk=id_answer)
+                ids_answers = request.POST.getlist(question.__str__())
+                if not ids_answers:
+                    if not Answer.objects.all().filter(question=question, value="Nessuno"):
+                        Answer(question=question, value="Nessuno").save()
+                    answer = Answer.objects.get(question=question, value="Nessuno")
                     patient_answer = Patient_Survey_Question_Answer(patient=patient, survey=survey, question=question, answer=answer, date=date)
                     patient_answers.append(patient_answer)
+                else:
+                    for id_answer in ids_answers:
+                        answer = Answer.objects.get(pk=id_answer)
+                        patient_answer = Patient_Survey_Question_Answer(patient=patient, survey=survey, question=question, answer=answer, date=date)
+                        patient_answers.append(patient_answer)
             elif question.type.__str__() == "Alphanumerical Input":
                 answer_value = request.POST.get(question.__str__())
-                Answer(question=question, value=answer_value).save()
+                # this check allow to use past answers to be used instead of adding them again(memory saving)
+                if not Answer.objects.filter(question=question, value=answer_value):
+                    Answer(question=question, value=answer_value).save()
                 answer = Answer.objects.get(question=question, value=answer_value)
                 patient_answer = Patient_Survey_Question_Answer(patient=patient, survey=survey, question=question, answer=answer, date=date)
                 patient_answers.append(patient_answer)
@@ -636,6 +646,8 @@ class FormSurveyPatient(forms.Form):
         survey = Survey.objects.get(pk=self.survey_name)
 
         patient_answers_list = self.get_patient_answers_from_form(request=request, patient=patient, survey=survey, date=date)
+        for ans in patient_answers_list:
+                print(f"{ans.patient} - {ans.survey} - {ans.question} - {ans.answer}")
     #patient_answers creates a transaction: either all answers are written or nothing, to prevent DB corruption in case of error
         for patient_answers in patient_answers_list:
             patient_answers.save()
@@ -716,14 +728,22 @@ class FormSurveyCaregiver(forms.Form):
                 caregiver_answer = Caregiver_Survey_Question_Answer(caregiver=caregiver, survey=survey, question=question, answer=answer, date=date)
                 caregiver_answers.append(caregiver_answer)
             elif question.type.__str__() == "Multiple Choice":
-                ids_answers = request.POST.get(question.__str__())
-                for id_answer in ids_answers:
-                    answer = Answer.objects.get(pk=id_answer)
+                ids_answers = request.POST.getlist(question.__str__())
+                if not ids_answers:
+                    if not Answer.objects.all().filter(question=question, value="Nessuno"):
+                        Answer(question=question, value="Nessuno").save()
+                    answer = Answer.objects.get(question=question, value="Nessuno")
                     caregiver_answer = Caregiver_Survey_Question_Answer(caregiver=caregiver, survey=survey, question=question, answer=answer, date=date)
                     caregiver_answers.append(caregiver_answer)
+                else:
+                    for id_answer in ids_answers:
+                        answer = Answer.objects.get(pk=id_answer)
+                        caregiver_answer = Caregiver_Survey_Question_Answer(caregiver=caregiver, survey=survey, question=question, answer=answer, date=date)
+                        caregiver_answers.append(caregiver_answer)
             elif question.type.__str__() == "Alphanumerical Input":
                 answer_value = request.POST.get(question.__str__())
-                Answer(question=question, value=answer_value).save()
+                if not Answer.objects.filter(question=question, value=answer_value):
+                    Answer(question=question, value=answer_value).save()
                 answer = Answer.objects.get(question=question, value=answer_value)
                 caregiver_answer = Caregiver_Survey_Question_Answer(caregiver=caregiver, survey=survey, question=question, answer=answer, date=date)
                 caregiver_answers.append(caregiver_answer)

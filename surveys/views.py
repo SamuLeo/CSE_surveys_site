@@ -87,10 +87,10 @@ def export_surveys_single_caregiver_view(request):
         form = FormExportSurveysSingleCaregiver(request.POST)
 
         if form.is_valid():
-            # try:
-            return form.process()
-            # except:
-            #     return render(request, "surveys/export_error.html")
+            try:
+                return form.process()
+            except:
+                return render(request, "surveys/export_error.html")
 
             # print(form.cleaned_data["patient"])
             # id_patient = form.cleaned_data["patient"]
@@ -121,10 +121,10 @@ def export_surveys_patients_view(request):
         form = FormExportSurveysPatients(request.POST)
 
         if form.is_valid():
-            # try:
-            return form.process()
-            # except:
-                # return render(request, "surveys/export_error.html")
+            try:
+                return form.process()
+            except:
+                return render(request, "surveys/export_error.html")
     else:
         form = FormExportSurveysPatients()
 
@@ -137,10 +137,10 @@ def export_surveys_caregivers_view(request):
         form = FormExportSurveysCaregivers(request.POST)
 
         if form.is_valid():
-            # try:
-            return form.process()
-            # except:
-                # return render(request, "surveys/export_error.html")
+            try:
+                return form.process()
+            except:
+                return render(request, "surveys/export_error.html")
     else:
         form = FormExportSurveysCaregivers()
 
