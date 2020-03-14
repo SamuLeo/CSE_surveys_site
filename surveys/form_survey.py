@@ -723,7 +723,7 @@ class FormSurveyCaregiver(forms.Form):
             if question.type.__str__() == "Instructions in compound question":
                 continue
             elif question.type.__str__() == "Single Choice":
-                id_answer = request.POST.get(question.__str__())
+                id_answer = self.clean.get(request.POST.get(question.__str__()))
                 answer = Answer.objects.get(pk=id_answer)
                 caregiver_answer = Caregiver_Survey_Question_Answer(caregiver=caregiver, survey=survey, question=question, answer=answer, date=date)
                 caregiver_answers.append(caregiver_answer)
